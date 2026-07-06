@@ -2,7 +2,7 @@
 
 A single-file flight simulator with a voice instructor, scored training circuits, real(ish) trainer physics, procedural terrain, night flying, and practice failures. No build step, no assets — one HTML file plus Three.js from a CDN.
 
-**Fly it: https://arnie016.github.io/fable-flight/** (or just open `index.html`)
+**Fly it: https://arnie016.github.io/flight-simulator-fable5/** (or just open `index.html`)
 
 ## How to fly
 Hold **W** for full throttle → pull **↓** at 55 kt → follow the voice instructor and the cyan rings around the circuit → land gently (~65 kt, flaps **F**, flare below 10 m) → brake with **Space**. Your circuit gets scored.
