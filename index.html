@@ -383,7 +383,10 @@ function applyEnv() {
 
 /* ==== 5. AIRCRAFT — procedural, animated surfaces, nav lights ==== */
 const plane = new THREE.Group();
-let prop, propDisc, surf = {}, navL, navR, strobe, cockpitOnly;
+let prop, propDisc, surf = {}, navL, navR, strobe, cockpitOnly, cockpitYoke;
+const gearLegs = [];              // per-strut group for suspension + wheel-spin animation
+const gearComp = [0, 0, 0];       // per-gear compression, written by physics, read by graphics
+let wheelSpin = 0;                // wheel roll angle
 (function buildPlane() {
   const std = (c, r, m) => new THREE.MeshStandardMaterial({ color: c, roughness: r ?? 0.55, metalness: m ?? 0.1 });
   const white = std(0xeceff4), red = std(0xd3382f), dark = std(0x22252a, 0.9, 0),
@@ -432,12 +435,14 @@ let prop, propDisc, surf = {}, navL, navR, strobe, cockpitOnly;
   const rm = new THREE.Mesh(new THREE.BoxGeometry(0.1, 1.25, 0.5), std(0xdfe3ea));
   rm.geometry.translate(0, 0, 0.25); rm.castShadow = true; surf.rud.add(rm); plane.add(surf.rud);
   // gear: struts + wheels at the physics contact points
-  for (const g of GEARS) {
+  GEARS.forEach((g, gi) => {
+    const leg = new THREE.Group(); leg.position.set(g.off.x, 0, g.off.z);
     const strut = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.7, 0.09), metal);
-    add(strut, g.off.x, -0.55, g.off.z);
+    strut.position.y = -0.55; strut.castShadow = true; leg.add(strut);
     const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.28, 0.2, 12), dark);
-    wheel.rotation.z = Math.PI / 2; add(wheel, g.off.x, -0.87, g.off.z);
-  }
+    wheel.rotation.z = Math.PI / 2; wheel.position.y = -0.87; wheel.castShadow = true; leg.add(wheel);
+    leg.userData.wheel = wheel; plane.add(leg); gearLegs[gi] = leg;
+  });
   prop = new THREE.Mesh(new THREE.BoxGeometry(0.16, 2.7, 0.08), std(0x3a3020, 0.8, 0)); add(prop, 0, -0.02, -3.78);
   propDisc = new THREE.Mesh(new THREE.CircleGeometry(1.35, 22),
     new THREE.MeshBasicMaterial({ color: 0xccccdd, transparent: true, opacity: 0.2, side: THREE.DoubleSide }));
@@ -459,6 +464,12 @@ let prop, propDisc, surf = {}, navL, navR, strobe, cockpitOnly;
   }
   const roof = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.05, 0.7), std(0x1a1e24, 0.9, 0));
   roof.position.set(0, 1.33, -1.1); cockpitOnly.add(roof);
+  // yoke — moves with pitch/roll input so the cockpit view feels connected to the aircraft
+  cockpitYoke = new THREE.Group(); cockpitYoke.position.set(0, 0.34, -1.15);
+  const col2 = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.34, 8), std(0x1a1e24, 0.7, 0.2));
+  col2.rotation.x = 0.5; col2.position.set(0, 0, 0.08); cockpitYoke.add(col2);
+  const grip = new THREE.Mesh(new THREE.TorusGeometry(0.11, 0.022, 6, 14), std(0x24282e, 0.6, 0.2));
+  cockpitYoke.add(grip); cockpitOnly.add(cockpitYoke);
   cockpitOnly.visible = false; plane.add(cockpitOnly);
 })();
 scene.add(plane);
@@ -593,13 +604,16 @@ function step(h) {
   const fgL = _fg.length(); if (fgL > 1e-4) _fg.multiplyScalar(1 / fgL);
   _lat.set(-_fg.z, 0, _fg.x);
   const rudIn = ovr.yaw ?? S.ctl.yaw;
-  for (const g of GEARS) {
+  gearComp[0] = gearComp[1] = gearComp[2] = 0;
+  for (let gi = 0; gi < GEARS.length; gi++) {
+    const g = GEARS[gi];
     _r.copy(g.off).applyQuaternion(S.quat);
     const gh = terrainH(S.pos.x + _r.x, S.pos.z + _r.z);
     const py = S.pos.y + _r.y - gh;
     if (py >= 0) continue;
     anyContact = true;
     const pen = Math.min(-py, 0.6);
+    gearComp[gi] = pen;
     maxPen = Math.max(maxPen, pen);
     _vpt.crossVectors(_ww, _r).add(S.vel);
     if (!S.onGround && -_vpt.y > touchdownSink) touchdownSink = -_vpt.y;
@@ -871,8 +885,22 @@ const predGeo = new THREE.BufferGeometry();
 predGeo.setAttribute("position", new THREE.BufferAttribute(predPos, 3));
 const predictor = new THREE.Line(predGeo, new THREE.LineBasicMaterial({ color: 0x37e0ff, transparent: true, opacity: 0.45 }));
 predictor.frustumCulled = false; predictor.visible = false; scene.add(predictor);
-// speech pump — render side only
-let speaking = false;
+// speech pump — render side only. Picks the best neural voice the browser ships,
+// and shapes prosody by priority so warnings sound urgent and guidance sounds calm.
+let bestVoice = null;
+function pickVoice() {
+  if (!("speechSynthesis" in window)) return;
+  const vs = speechSynthesis.getVoices();
+  if (!vs.length) return;
+  // ranked preference: known-good neural/premium en voices first
+  const pref = [
+    /Google US English/i, /Microsoft (Aria|Guy|Jenny|Christopher)/i, /Samantha/i,
+    /(^| )(Aaron|Fred|Daniel|Karen|Moira|Tessa)/i, /en-US/i, /en-GB/i, /en[-_]/i
+  ];
+  for (const rx of pref) { const v = vs.find(x => rx.test(x.name) || rx.test(x.lang)); if (v) { bestVoice = v; return; } }
+  bestVoice = vs.find(x => /^en/i.test(x.lang)) || vs[0];
+}
+if ("speechSynthesis" in window) { pickVoice(); speechSynthesis.onvoiceschanged = pickVoice; }
 function pumpSpeech() {
   if (!("speechSynthesis" in window)) { INS.queue.length = 0; return; }
   if (INS.queue.length === 0) return;
@@ -882,7 +910,11 @@ function pumpSpeech() {
   if (speechSynthesis.speaking && next.prio <= 2) speechSynthesis.cancel();
   INS.queue.shift();
   const u = new SpeechSynthesisUtterance(next.text);
-  u.rate = 1.04; u.pitch = 1.0; u.volume = 0.9;
+  if (bestVoice) u.voice = bestVoice;
+  // critical warnings: faster, firmer. routine guidance: measured, natural.
+  if (next.prio <= 2) { u.rate = 1.14; u.pitch = 1.06; u.volume = 1.0; }
+  else if (next.prio <= 4) { u.rate = 1.0; u.pitch = 1.0; u.volume = 0.92; }
+  else { u.rate = 0.96; u.pitch = 0.98; u.volume = 0.85; }
   speechSynthesis.speak(u);
 }
 // instructor card UI
@@ -1162,6 +1194,16 @@ function syncGraphics(dt) {
   surf.elev.rotation.x = -(S.ctl.pitch + S.trim) * 0.45;
   surf.rud.rotation.y  =  S.ctl.yaw * 0.5;
   surf.flapL.rotation.x = surf.flapR.rotation.x = S.flapPos * 0.6;
+  // suspension: each strut rises into the wing by its compression; wheels spin with ground speed
+  const groundSpd = Math.hypot(S.vel.x, S.vel.z);
+  wheelSpin += (groundSpd / 0.28) * dt;
+  for (let gi = 0; gi < gearLegs.length; gi++) {
+    const leg = gearLegs[gi];
+    leg.position.y = Math.min(gearComp[gi], 0.28);          // strut travel
+    if (S.onGround) leg.userData.wheel.rotation.x = wheelSpin;
+  }
+  // cockpit yoke follows control input
+  if (cockpitYoke) { cockpitYoke.position.z = -1.15 + (S.ctl.pitch + S.trim) * 0.12; cockpitYoke.rotation.z = -S.ctl.roll * 0.8; }
   // nav lights + strobe
   const blink = (S.simTime % 1.2) < 0.08;
   strobe.visible = blink;
