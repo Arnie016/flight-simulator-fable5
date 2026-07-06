@@ -1,0 +1,24 @@
+{
+  "shipped_in_v4": [
+    "terrain hash fix: real rolling hills (96 m) with flat airfield + pattern, physics-consistent",
+    "engine model: RPM lag, windmilling failure, torque roll, RPM-driven prop wash/P-factor",
+    "failures (settings + SIM API): engine out with instructor emergency guidance, vacuum failure corrupting the AI display",
+    "deterministic turbulence layers + thermals over sunlit terrain",
+    "night mode: sky/fog/lighting, landing-light cone, runway edge lights, panel tint (N key)",
+    "visibility control, carved lake basin + ditching crash",
+    "scored circuit: pattern altitude, final speed, sink, centerline -> grade + localStorage best",
+    "contextual key-cue bar with lit keycaps; flight-path predictor; guide arrow slimmed",
+    "settings panel: night/visibility/wind/turbulence/failures",
+    "slip ball, ASI arcs + 55 kt bug, RPM + trend readouts"
+  ],
+  "parked": [
+    {"feature": "engine + wind + stall-horn audio (Web Audio, no assets)", "why_parked": "still the #1 feel win"},
+    {"feature": "replay system (record 90 s of state, play back from any camera)", "why_parked": "own contract; ring-buffer of S + surfaces, deterministic playback"},
+    {"feature": "second procedural airport + cross-country mission", "why_parked": "needs mission-definition refactor first"},
+    {"feature": "ILS approach + flight-director bars / glass-cockpit PFD toggle", "why_parked": "IFR layer after VFR training is polished"},
+    {"feature": "rain particles (pooled)", "why_parked": "visibility slider covers the training value; rain is cosmetic"},
+    {"feature": "electrical system (battery/alternator) + flap asymmetry failure", "why_parked": "vacuum + engine cover the training pattern; add when failures UI grows"},
+    {"feature": "wake turbulence, cockpit frame slimming, envelope-protection toggle", "why_parked": "polish"},
+    {"feature": "mobile touch controls / second aircraft", "why_parked": "separate contracts"}
+  ]
+}
