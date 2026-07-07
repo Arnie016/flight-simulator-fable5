@@ -1,5 +1,8 @@
 # Log — Flight Sim Vertical Core
 
+## [2026-07-07] build | v5 leg: sound, premium-voice pipeline, plane details, flap limit — deployed d1d5e93
+Audio: Web Audio soundscape, zero assets — engine (two detuned saws, pitch follows RPM, quiets on engine failure), wind noise (loudness/pitch follow airspeed), stall horn, touchdown thump; unlocks on first key/click per browser policy; M or settings toggle. Premium voice: scripts/gen-voice.py pre-renders all 25 instructor lines with Deepgram at BUILD time (key never ships — a runtime key in public HTML would be scraped in hours); sim fetches voice/manifest.json and prefers clips, falling back to the tuned browser voice. Plane: pilot figure (hidden in cockpit view), wheel fairings on suspension legs, spinner, fuselage seams. Training rule: flap white-arc limit 96 kt — buffet torque, FLAP SPEED warning, instructor line, F-cue. All regressions re-verified identical (takeoff z=193, landing sink 1.26); zero console errors; 61 FPS. Sketchfab attempt: Blender MCP reachable but Sketchfab API key not configured in the Blender panel — parked pending user key; no generation budget spent.
+
 ## [2026-07-06] fix | v3 graded late (classifier outage) — one real bug: dead terrain
 v3 battery ran green (cues, ground effect −5.7→−2.9 m/s sink near ground, hill settle, takeoff/landing) EXCEPT the terrain was nearly flat: 9/81 probes nonzero, max 14.8 m. Trace: hash2's intermediate product exceeded 2^53, losing low bits before int32 coercion — noise biased low, the +35 offset rarely survived the clamp. Fix: Math.imul-based hash. After: 69/81 nonzero, hills to 96 m, field/pattern still flat.
 
