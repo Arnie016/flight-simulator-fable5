@@ -1,0 +1,30 @@
+{
+ "model": "aura-2-andromeda-en",
+ "slugs": [
+  "full-throttle-keep-the-centerline-with-a-and-d",
+  "airspeed-alive",
+  "rotate-at-55-knots-pull-gently",
+  "positive-rate-hold-a-shallow-climb-at-80-knots",
+  "lower-the-nose-slightly-build-airspeed",
+  "level-off-reduce-power-to-60-percent-small-corre",
+  "reduce-power-to-40-percent-aim-for-the-runway-nu",
+  "flaps-fifty-press-f",
+  "begin-the-flare-idle-power-hold-it-off",
+  "on-the-ground-brake-with-space-steer-with-a-and-",
+  "gentle-touchdown-brake-with-space",
+  "firm-landing-brake-with-space",
+  "hard-landing-watch-the-sink-rate-next-time",
+  "stall-warning-lower-the-nose",
+  "overspeed-reduce-throttle",
+  "sink-rate-high-add-power",
+  "too-fast-on-final-reduce-throttle",
+  "speed-is-low-add-a-touch-of-power-keep-65-knots",
+  "crosswind-from-the-right-hold-a-little-left-wing",
+  "engine-failure-pitch-for-70-knots-pick-a-field-a",
+  "vacuum-failure-the-attitude-indicator-is-unrelia",
+  "training-restarted-set-full-throttle-with-w",
+  "hard-impact-reset-with-r",
+  "obstacle-collision-reset-with-r-and-try-a-slower",
+  "circuit-complete-well-flown"
+ ]
+}
