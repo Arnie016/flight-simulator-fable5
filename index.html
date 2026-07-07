@@ -92,6 +92,8 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
+<script src="sf-parked-plane.js"></script><!-- optional: Sketchfab guest aircraft, CC-BY antonmoek (see README) -->
+
 <script>
 "use strict";
 /* ============================================================
@@ -330,6 +332,28 @@ let windsock;
   const sock = new THREE.Mesh(new THREE.ConeGeometry(0.45, 2.6, 8), new THREE.MeshLambertMaterial({ color: 0xff6a00 }));
   sock.geometry.translate(0, -1.3, 0); sock.position.y = 6; sock.name = "sock"; windsock.add(sock);
   windsock.position.set(55, 0, 430); scene.add(windsock);
+  // parked guest aircraft on the apron — "Cartoon Plane" by antonmoek (Sketchfab, CC-BY 4.0),
+  // GLB baked to loader-free JS at build time (scripts + attribution in README). 404-safe.
+  if (typeof SF_PARKED !== "undefined") {
+    const guest = new THREE.Group();
+    for (const pr of SF_PARKED.prims) {
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute("position", new THREE.Float32BufferAttribute(pr.pos, 3));
+      if (pr.nor) geo.setAttribute("normal", new THREE.Float32BufferAttribute(pr.nor, 3));
+      else geo.computeVertexNormals();
+      if (pr.vc) geo.setAttribute("color", new THREE.Float32BufferAttribute(pr.vc, 3));
+      geo.setIndex(pr.idx);
+      const mesh = new THREE.Mesh(geo, new THREE.MeshLambertMaterial(
+        pr.vc ? { vertexColors: true } : { color: new THREE.Color(pr.col[0], pr.col[1], pr.col[2]) }));
+      mesh.castShadow = true; guest.add(mesh);
+    }
+    const gs = 4.0;
+    guest.scale.set(gs, gs, gs);
+    guest.position.set(60, -SF_PARKED.bbox[1] * gs, 358);
+    guest.rotation.y = -0.7;
+    scene.add(guest);
+    obstacles.push({ min: new THREE.Vector3(53, 0, 350), max: new THREE.Vector3(68, 4, 366), label: "parked aircraft" });
+  }
   // trees (clear of |x|<95 corridor)
   const N = 140;
   const trunks = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.28, 0.4, 3.2, 6), lambert(0x6b4a2b), N);

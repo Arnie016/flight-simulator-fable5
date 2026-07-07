@@ -12,4 +12,9 @@ The on-screen cue bar always shows the exact key to press next. **H** opens the 
 ## Built with the LOOPS method
 Spec → contract of testable assertions → build → deterministic browser evaluation (`window.SIM.warp()`) → repair from the trace. The paper trail is in this repo: [contract.md](contract.md) (63 graded assertions), [log.md](log.md) (every bug and what it taught), [sprint-spec.md](sprint-spec.md), [progress.md](progress.md), [feature_list.json](feature_list.json).
 
-Authored with Claude Fable 5 in Claude Code, evaluated in a real browser at every step. MIT.
+## Credits
+- Parked apron aircraft: ["Cartoon Plane"](https://sketchfab.com/3d-models/cartoon-plane-f312ec9f87794bdd83630a3bc694d8ea) by [antonmoek](https://sketchfab.com/antonmoek), licensed [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) — converted from GLB to embedded JS (vertex-color bake, no runtime loaders) by `scripts` tooling.
+- Instructor voice: pre-generated with Deepgram Aura.
+- Everything else (aircraft, terrain, instruments, audio) is procedural — no other assets.
+
+Authored with Claude Fable 5 in Claude Code, evaluated in a real browser at every step. MIT (code); the Sketchfab model retains its CC-BY license.
