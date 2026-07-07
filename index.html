@@ -64,6 +64,7 @@
 <button id="gearBtn">⚙</button>
 <div id="settings">
   <h3>SETTINGS</h3>
+  <label>Sound <input type="checkbox" id="sSnd" checked></label>
   <label>Night <input type="checkbox" id="sNight"></label>
   <label>Visibility <input type="range" id="sVis" min="25" max="100" value="100"></label>
   <div class="sec">WEATHER</div>
@@ -162,6 +163,7 @@ addEventListener("keydown", e => {
   if (e.code === "KeyF") S.flapSet = S.flapSet >= 1 ? 0 : S.flapSet + 0.5;
   if (e.code === "KeyX") S.windOn = !S.windOn;
   if (e.code === "KeyN") S.night = !S.night;
+  if (e.code === "KeyM") AUD.on = !AUD.on;
   if (e.code === "KeyH") helpEl.style.display = helpEl.style.display === "none" ? "" : "none";
   if (e.code === "KeyP") { S.paused = !S.paused; banner(S.paused ? "PAUSED" : "", S.paused ? "press P to resume" : ""); }
   if (/^Digit\d$/.test(e.code)) { const d = +e.code.slice(5); S.thrT = d === 0 ? 1 : d / 10; }
@@ -383,7 +385,7 @@ function applyEnv() {
 
 /* ==== 5. AIRCRAFT — procedural, animated surfaces, nav lights ==== */
 const plane = new THREE.Group();
-let prop, propDisc, surf = {}, navL, navR, strobe, cockpitOnly, cockpitYoke;
+let prop, propDisc, surf = {}, navL, navR, strobe, cockpitOnly, cockpitYoke, pilot;
 const gearLegs = [];              // per-strut group for suspension + wheel-spin animation
 const gearComp = [0, 0, 0];       // per-gear compression, written by physics, read by graphics
 let wheelSpin = 0;                // wheel roll angle
@@ -441,8 +443,26 @@ let wheelSpin = 0;                // wheel roll angle
     strut.position.y = -0.55; strut.castShadow = true; leg.add(strut);
     const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.28, 0.2, 12), dark);
     wheel.rotation.z = Math.PI / 2; wheel.position.y = -0.87; wheel.castShadow = true; leg.add(wheel);
+    const pant = new THREE.Mesh(new THREE.SphereGeometry(0.34, 10, 8), white); // wheel fairing
+    pant.scale.set(0.55, 0.72, 1.15); pant.position.set(0, -0.78, -0.05); pant.castShadow = true; leg.add(pant);
     leg.userData.wheel = wheel; plane.add(leg); gearLegs[gi] = leg;
   });
+  // pilot figure (hidden in cockpit view)
+  pilot = new THREE.Group();
+  const torso = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.36, 0.26), std(0x27435f, 0.8, 0));
+  torso.position.set(0, 0.42, -0.78); pilot.add(torso);
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.145, 10, 8), std(0xd9a680, 0.7, 0));
+  head.position.set(0, 0.7, -0.78); pilot.add(head);
+  const cap = new THREE.Mesh(new THREE.SphereGeometry(0.15, 10, 6, 0, Math.PI * 2, 0, 1.1), std(0x9c2f2f, 0.7, 0));
+  cap.position.set(0, 0.72, -0.78); pilot.add(cap);
+  plane.add(pilot);
+  // spinner + fuselage seams
+  const spinner = new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.45, 10), metal);
+  spinner.rotation.x = -Math.PI / 2; spinner.position.set(0, -0.02, -3.95); plane.add(spinner);
+  for (const [sz, sr] of [[-1.3, 0.58], [1.5, 0.55]]) {
+    const seam = new THREE.Mesh(new THREE.CylinderGeometry(sr, sr, 0.03, 14), std(0xb9bfc8, 0.7, 0.2));
+    seam.rotation.x = Math.PI / 2; seam.position.set(0, 0.02, sz); plane.add(seam);
+  }
   prop = new THREE.Mesh(new THREE.BoxGeometry(0.16, 2.7, 0.08), std(0x3a3020, 0.8, 0)); add(prop, 0, -0.02, -3.78);
   propDisc = new THREE.Mesh(new THREE.CircleGeometry(1.35, 22),
     new THREE.MeshBasicMaterial({ color: 0xccccdd, transparent: true, opacity: 0.2, side: THREE.DoubleSide }));
@@ -561,6 +581,7 @@ function step(h) {
   CL = Math.min(CL, CLmax);
   if (alpha > 0.22 && !S.onGround && V > 8) S.stall = true;
   S.over = V * KT > 165;
+  S.flapOver = S.flapPos > 0.15 && V * KT > 96;   // white-arc limit
   const CD = CFG.CD0 + CFG.flap.dCD * fl + CFG.kInd * CL * CL;
   // ground effect: lift bonus within ~1 wingspan of the surface
   const aglGE = S.pos.y - CFG.restY - terrainH(S.pos.x, S.pos.z);
@@ -594,6 +615,7 @@ function step(h) {
   let Tz = -S.ctl.roll * CFG.ctl.roll * qbar
          + beta * CFG.stab.dihedral * qbar
          + (S.stall && !S.onGround ? Math.sin(S.simTime * 1.7) * qbar * 0.22 : 0) // stall wing-drop buffet
+         + (S.flapOver ? Math.sin(S.simTime * 11) * qbar * 0.05 : 0)              // flap overspeed buffet
          - rpmFrac * 110 * (1 - Math.min(V / 40, 1))    // engine torque roll at high power/low speed
          - av.z * CFG.damp.roll * (60 + qbar);
 
@@ -735,6 +757,7 @@ function instructorStep() {
   S.phase = ph;
   if (S.fail.engine && !S.onGround) say("engOut", "Engine failure. Pitch for 70 knots. Pick a field ahead.", 1, 25);
   if (S.fail.vacuum) say("vacOut", "Vacuum failure. The attitude indicator is unreliable — cross-check outside.", 3, 45);
+  if (S.flapOver) say("flapOv", "Flaps overspeed. Retract flaps or slow down.", 3, 15);
   if (ph !== prev) {
     if (ph === "takeoff-roll") say("toRoll", "Full throttle. Keep the centerline with A and D.", 5, 20);
     if (ph === "initial-climb" && prev !== "climb") say("posRate", "Positive rate. Hold a shallow climb at 80 knots.", 4, 20);
@@ -813,6 +836,7 @@ function currentCue() {
   if (S.stall && !S.onGround) return { keys: ["↑"], text: "push — lower the nose" };
   if (S.fail.engine && !S.onGround) return { keys: ["↓"], text: "engine out — 70 kt, pick a field" };
   if (S.over) return { keys: ["S"], text: "reduce power" };
+  if (S.flapOver) return { keys: ["F"], text: "flaps overspeed — retract" };
   if (!S.onGround && agl < 30 && S.vsi < -2 && ph !== "flare") return { keys: ["W", "↓"], text: "too low — power, pull up" };
   if (ph === "parked") return { keys: ["W"], text: "hold for full throttle" };
   if (ph === "takeoff-roll") return kt < 42 ? { keys: ["A", "D"], text: "hold the centerline" } : { keys: ["↓"], text: "rotate at 55 kt — pull gently" };
@@ -856,6 +880,7 @@ function updateCue() {
 const settingsEl = document.getElementById("settings");
 document.getElementById("gearBtn").onclick = () => settingsEl.style.display = settingsEl.style.display === "block" ? "none" : "block";
 const wire = (id, fn) => document.getElementById(id).onchange = e => fn(e.target);
+wire("sSnd", t => AUD.on = t.checked);
 wire("sNight", t => S.night = t.checked);
 wire("sVis", t => S.vis = t.value / 100);
 wire("sWind", t => S.windOn = t.checked);
@@ -885,6 +910,25 @@ const predGeo = new THREE.BufferGeometry();
 predGeo.setAttribute("position", new THREE.BufferAttribute(predPos, 3));
 const predictor = new THREE.Line(predGeo, new THREE.LineBasicMaterial({ color: 0x37e0ff, transparent: true, opacity: 0.45 }));
 predictor.frustumCulled = false; predictor.visible = false; scene.add(predictor);
+// ---- premium voice: pre-generated Deepgram clips, browser speech as fallback ----
+// Clips are rendered at build time (scripts/gen-voice.py) so no API key ever ships.
+// voice/manifest.json lists available slugs; a missing clip falls back to speechSynthesis.
+const voiceSlug = t => t.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 48);
+const VOICE = { set: new Set(), cache: {}, ready: false, cur: null };
+fetch("voice/manifest.json").then(r => r.ok ? r.json() : null).then(m => {
+  if (m && Array.isArray(m.slugs)) { m.slugs.forEach(s => VOICE.set.add(s)); VOICE.ready = true; }
+}).catch(() => {});
+function playClip(text, prio) {
+  const slug = voiceSlug(text);
+  if (!VOICE.set.has(slug)) return false;
+  let a = VOICE.cache[slug];
+  if (!a) { a = new Audio("voice/" + slug + ".mp3"); VOICE.cache[slug] = a; }
+  if (VOICE.cur && prio <= 2) { try { VOICE.cur.pause(); } catch (e) {} }
+  else if (VOICE.cur && !VOICE.cur.ended && !VOICE.cur.paused && prio > 2) return true; // busy, skip low-prio
+  a.currentTime = 0; a.volume = prio <= 2 ? 1 : prio <= 4 ? 0.9 : 0.8;
+  a.play().catch(() => {}); VOICE.cur = a;
+  return true;
+}
 // speech pump — render side only. Picks the best neural voice the browser ships,
 // and shapes prosody by priority so warnings sound urgent and guidance sounds calm.
 let bestVoice = null;
@@ -909,6 +953,7 @@ function pumpSpeech() {
   if (speechSynthesis.speaking && next.prio > 2) return;
   if (speechSynthesis.speaking && next.prio <= 2) speechSynthesis.cancel();
   INS.queue.shift();
+  if (playClip(next.text, next.prio)) return;   // premium clip if available
   const u = new SpeechSynthesisUtterance(next.text);
   if (bestVoice) u.voice = bestVoice;
   // critical warnings: faster, firmer. routine guidance: measured, natural.
@@ -944,6 +989,7 @@ function heading() { _fwd.set(0, 0, -1).applyQuaternion(S.quat); return Math.ata
 function updateCamera(dt) {
   document.getElementById("cross").style.display = camMode === 1 ? "block" : "none";
   cockpitOnly.visible = camMode === 1;
+  if (pilot) pilot.visible = camMode !== 1;
   if (camMode === 1) { // cockpit with limited mouse-look
     _off.set(0, 0.78, -0.75).applyQuaternion(S.quat);
     camera.position.copy(S.pos).add(_off);
@@ -1137,12 +1183,61 @@ function drawHUD(fps, dt) {
     : (S.onGround && kt >= 52 && S.thrA > 0.5) ? "#7dffa0"
     : "#fff";
   // overlays
-  const showWarn = (!S.crashed) && ((S.stall && !S.onGround) || S.over || (!S.onGround && S.vsi < -9 && S.pos.y - CFG.restY < 150));
-  warnEl.textContent = S.over ? "OVERSPEED" : (S.stall && !S.onGround) ? "STALL" : "SINK RATE";
+  const showWarn = (!S.crashed) && ((S.stall && !S.onGround) || S.over || S.flapOver || (!S.onGround && S.vsi < -9 && S.pos.y - CFG.restY < 150));
+  warnEl.textContent = S.over ? "OVERSPEED" : (S.stall && !S.onGround) ? "STALL" : S.flapOver ? "FLAP SPEED" : "SINK RATE";
   warnEl.style.display = showWarn ? "block" : "none";
   flashEl.style.opacity = showWarn ? 0.85 : 0;
   topbar.textContent = "FPS " + Math.round(fps) + "   CAM " + CAM_NAMES[camMode] + (S.paused ? "   ⏸ PAUSED" : "") + "\nH help · Fable Flight";
 }
+
+/* ==== 9b. AUDIO — Web Audio, zero assets, render-side only ==== */
+const AUD = { on: true, ctx: null, engine: null, engGain: null, windGain: null, windFilt: null, horn: null, hornGain: null, master: null };
+function audioInit() {
+  if (AUD.ctx || !(window.AudioContext || window.webkitAudioContext)) return;
+  const c = AUD.ctx = new (window.AudioContext || window.webkitAudioContext)();
+  AUD.master = c.createGain(); AUD.master.gain.value = 0.55; AUD.master.connect(c.destination);
+  // engine: two detuned saws through a lowpass — pitch follows RPM
+  AUD.engGain = c.createGain(); AUD.engGain.gain.value = 0;
+  const lp = c.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 850;
+  AUD.engGain.connect(lp); lp.connect(AUD.master);
+  AUD.engine = [];
+  for (const det of [0, 9]) {
+    const o = c.createOscillator(); o.type = "sawtooth"; o.frequency.value = 60; o.detune.value = det;
+    o.connect(AUD.engGain); o.start(); AUD.engine.push(o);
+  }
+  // wind: looped noise through a bandpass — loudness/pitch follow airspeed
+  const len = c.sampleRate * 2, buf = c.createBuffer(1, len, c.sampleRate), d = buf.getChannelData(0);
+  for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+  const src = c.createBufferSource(); src.buffer = buf; src.loop = true;
+  AUD.windFilt = c.createBiquadFilter(); AUD.windFilt.type = "bandpass"; AUD.windFilt.frequency.value = 500; AUD.windFilt.Q.value = 0.6;
+  AUD.windGain = c.createGain(); AUD.windGain.gain.value = 0;
+  src.connect(AUD.windFilt); AUD.windFilt.connect(AUD.windGain); AUD.windGain.connect(AUD.master); src.start();
+  // stall horn
+  AUD.horn = c.createOscillator(); AUD.horn.type = "sawtooth"; AUD.horn.frequency.value = 720;
+  AUD.hornGain = c.createGain(); AUD.hornGain.gain.value = 0;
+  AUD.horn.connect(AUD.hornGain); AUD.hornGain.connect(AUD.master); AUD.horn.start();
+}
+function audioUpdate() {
+  if (!AUD.ctx || AUD.ctx.state !== "running") return;
+  const t = AUD.ctx.currentTime, T = 0.09;
+  const rf = Math.max(0, (S.rpm - 600) / 2100);
+  AUD.engGain.gain.setTargetAtTime(AUD.on && !S.crashed ? 0.16 * (0.25 + 0.75 * rf) * (S.fail.engine ? 0.3 : 1) : 0, t, T);
+  AUD.engine.forEach((o, i) => o.frequency.setTargetAtTime(42 + rf * 80 + i * 1.6, t, T));
+  const v = Math.min(S.ias / 90, 1.2);
+  AUD.windGain.gain.setTargetAtTime(AUD.on ? v * v * 0.30 : 0, t, T);
+  AUD.windFilt.frequency.setTargetAtTime(300 + v * 1400, t, T);
+  AUD.hornGain.gain.setTargetAtTime(AUD.on && S.stall && !S.onGround && !S.crashed ? 0.11 : 0, t, 0.03);
+}
+function audioThump(mag) {
+  if (!AUD.ctx || AUD.ctx.state !== "running" || !AUD.on) return;
+  const c = AUD.ctx, o = c.createOscillator(), g = c.createGain();
+  o.type = "triangle"; o.frequency.value = 70;
+  g.gain.value = Math.min(0.5, 0.12 + mag * 0.08);
+  g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.25);
+  o.connect(g); g.connect(AUD.master); o.start(); o.stop(c.currentTime + 0.3);
+}
+const audioUnlock = () => { audioInit(); if (AUD.ctx && AUD.ctx.state === "suspended") AUD.ctx.resume(); };
+addEventListener("keydown", audioUnlock); addEventListener("pointerdown", audioUnlock);
 
 /* ==== 10. EFFECTS — pooled smoke/dust sprites (render-side only) ==== */
 const FX = { pool: [], idx: 0, N: 18 };
@@ -1224,6 +1319,7 @@ function syncGraphics(dt) {
   if (!prevOnGround && S.onGround && S.touchSink > 1.2) {
     for (const g of GEARS) { _r.copy(g.off).applyQuaternion(S.quat); puff(S.pos.x + _r.x, S.pos.y - 0.8, S.pos.z + _r.z, 2 + S.touchSink); }
     if (S.touchSink > 3) shakeMag = 0.5 + S.touchSink * 0.15;
+    audioThump(S.touchSink);
   }
   prevOnGround = S.onGround;
   updateFX(dt);
@@ -1261,7 +1357,7 @@ function frame(now) {
     acc += dt;
     while (acc >= H) { step(H); acc -= H; if (S.crashed) { acc = 0; break; } }
   }
-  syncGraphics(dt); updateCamera(dt); drawHUD(fps, dt);
+  syncGraphics(dt); updateCamera(dt); drawHUD(fps, dt); audioUpdate();
   uiT += dt; if (uiT > 0.2) { uiT = 0; updateInstructorUI(); pumpSpeech(); updateCue(); }
   renderer.render(scene, camera);
 }
