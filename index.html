@@ -302,7 +302,7 @@ function noiseCanvas(base, spots, n, w, h) {
   return c;
 }
 // sky dome — canvas gradient, unaffected by fog
-let skyDome;
+let skyDome, sunSprite;
 (function sky() {
   const c = document.createElement("canvas"); c.width = 2; c.height = 256;
   const x = c.getContext("2d"), g = x.createLinearGradient(0, 0, 0, 256);
@@ -311,6 +311,14 @@ let skyDome;
   skyDome = new THREE.Mesh(new THREE.SphereGeometry(9500, 20, 14),
     new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(c), side: THREE.BackSide, fog: false }));
   scene.add(skyDome);
+  // sun disc + soft glow (billboard, sits toward the directional light)
+  const sc2 = document.createElement("canvas"); sc2.width = sc2.height = 256;
+  const sx = sc2.getContext("2d"), sg = sx.createRadialGradient(128, 128, 8, 128, 128, 128);
+  sg.addColorStop(0, "rgba(255,250,235,1)"); sg.addColorStop(0.12, "rgba(255,244,214,0.95)");
+  sg.addColorStop(0.3, "rgba(255,230,170,0.35)"); sg.addColorStop(1, "rgba(255,220,150,0)");
+  sx.fillStyle = sg; sx.fillRect(0, 0, 256, 256);
+  sunSprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(sc2), transparent: true, depthWrite: false, depthTest: false, fog: false, blending: THREE.AdditiveBlending }));
+  sunSprite.scale.set(1400, 1400, 1); scene.add(sunSprite);
 })();
 let LAKE = null;
 
@@ -440,11 +448,13 @@ let windsock;
   const cx = cc.getContext("2d"), g = cx.createRadialGradient(64, 64, 8, 64, 64, 62);
   g.addColorStop(0, "rgba(255,255,255,.95)"); g.addColorStop(1, "rgba(255,255,255,0)");
   cx.fillStyle = g; cx.fillRect(0, 0, 128, 128);
-  const cm = new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(cc), transparent: true, opacity: 0.5, depthWrite: false });
-  for (let i = 0; i < 26; i++) {
+  // clouds — clustered puffs at two altitudes for depth
+  for (let i = 0; i < 34; i++) {
+    const cm = new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(cc), transparent: true, opacity: 0.35 + Math.random() * 0.35, depthWrite: false });
     const sp = new THREE.Sprite(cm);
-    sp.position.set((Math.random() - .5) * 9000, 380 + Math.random() * 420, (Math.random() - .5) * 9000);
-    const sc = 260 + Math.random() * 260; sp.scale.set(sc, sc * 0.4, 1); scene.add(sp);
+    const layer = Math.random() < 0.5 ? 340 : 620;
+    sp.position.set((Math.random() - .5) * 9000, layer + Math.random() * 200, (Math.random() - .5) * 9000);
+    const sc = 300 + Math.random() * 340; sp.scale.set(sc, sc * (0.32 + Math.random() * 0.15), 1); scene.add(sp);
   }
   // lake: first candidate valley that's actually flat (terrain is deterministic, so this is too)
   { // lake sits in the basin carved by terrainH
@@ -463,6 +473,12 @@ function applyEnv() {
   sun.intensity = n ? 0.07 : 2.2;
   if (skyDome) skyDome.material.color.setHex(n ? 0x232e48 : 0xffffff);
   landingLight.intensity = n && !S.crashed ? 2.6 : 0;
+  if (sunSprite) { sunSprite.visible = !n; sunSprite.material.opacity = n ? 0 : 0.9; }
+}
+const _sunDir = new THREE.Vector3(0.36, 0.84, 0.24).normalize();
+function placeSun() {
+  if (!sunSprite || !sunSprite.visible) return;
+  sunSprite.position.copy(camera.position).addScaledVector(_sunDir, 8200);
 }
 
 /* ==== 5. AIRCRAFT — procedural, animated surfaces, nav lights ==== */
@@ -1531,7 +1547,7 @@ function frame(now) {
     acc += dt;
     while (acc >= H) { step(H); acc -= H; if (S.crashed) { acc = 0; break; } }
   }
-  syncGraphics(dt); updateCamera(dt); drawHUD(fps, dt); audioUpdate(); skillStep(dt);
+  syncGraphics(dt); updateCamera(dt); placeSun(); drawHUD(fps, dt); audioUpdate(); skillStep(dt);
   // gate-thread skill (watch mission index advancing) + stall haptic buzz
   if (MISSION.idx > prevMissionIdx) { skillGate(prevMissionIdx, 20); prevMissionIdx = MISSION.idx; }
   if (MISSION.idx < prevMissionIdx) prevMissionIdx = MISSION.idx;

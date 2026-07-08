@@ -6,6 +6,9 @@ Analog gamepad flight (deadzone + 1.6-expo curve, sticks fly / RT throttle / A b
 ## [2026-07-08] fix | Two real bugs found by the evaluator
 1. Mid-session macOS revoked file access to the Desktop folder (EPERM on every open; git couldn't read cwd) — not a code bug; resumed when access returned, applied the one deferred warp() line. 2. Aileron-roll skill never fired: I tracked roll via the YXZ Euler angle, which redistributes into pitch/yaw when the plane spirals (read 45° after 8 s of full aileron). Fix: integrate the true body roll rate (S.angVel.z·dt) instead — robust against gimbal. Now fires at a real 360. Also made skills testable by driving skillStep(H) inside warp(), so the deterministic harness exercises the same path as live play.
 
+## [2026-07-08] build | Atmosphere pass — sun + richer clouds
+Additive sun disc with soft radial glow, billboarded 8.2 km out in the light direction, camera-relative each frame, hidden at night. Clouds: 34 puffs across two altitude layers with varied opacity/scale for depth. Two TDZ ordering bugs on sunSprite caught in self-review before running (declared with skyDome ahead of the sky IIFE). Verified: sun projects on-screen (NDC ~0,0 when aimed, depthTest off so it draws through sky), night-hide works, takeoff/settle regressions intact, 58–73 FPS.
+
 ## [2026-07-08] test | v6 grade
 Control signs after the damping change: roll −42.1° (crisper), pitch +13.5°. Hands-off 20 s: 0.2° bank, no tumble. Takeoff z=194 (unchanged). Skills via warp: LOW PASS +200, GREASER +500×mult, AILERON ROLL +350 all fire; combo chain builds. ~150 FPS, zero console errors. (The 41 FPS in an earlier eval was the huge synchronous test warp blocking rAF, not a regression — confirmed on a clean idle read.)
 
