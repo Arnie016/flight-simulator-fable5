@@ -38,6 +38,18 @@
   #bigSpd .v{font-family:'Segoe UI',system-ui,sans-serif;font-weight:800;font-size:46px;line-height:1;color:#fff;letter-spacing:1px}
   #bigSpd .u{font-size:11px;color:#7d97ac;letter-spacing:2px;margin-top:3px}
   #bigSpd .tr{font-size:16px;vertical-align:14px;color:#9fe3ff}
+  #skills{position:fixed;right:16px;top:50%;transform:translateY(-50%);width:230px;display:flex;flex-direction:column;align-items:flex-end;gap:6px;pointer-events:none}
+  .skill{background:linear-gradient(90deg,rgba(20,30,44,0) 0%,rgba(20,34,52,.9) 40%);border-right:3px solid #37e0ff;border-radius:4px;padding:6px 12px 6px 20px;color:#fff;text-align:right;font-weight:700;letter-spacing:.5px;animation:skIn .25s ease-out;text-shadow:0 1px 4px #000}
+  .skill .pts{color:#7dffa0;font-size:13px}
+  .skill small{display:block;color:#9fb8cd;font-size:10px;font-weight:600;letter-spacing:1px}
+  @keyframes skIn{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:translateX(0)}}
+  #combo{position:fixed;right:16px;top:calc(50% - 130px);text-align:right;pointer-events:none;transition:opacity .3s;opacity:0}
+  #combo .mult{font-size:40px;font-weight:800;color:#ffb300;text-shadow:0 2px 8px #000;line-height:1}
+  #combo .bankd{font-size:12px;color:#9fb8cd;letter-spacing:2px}
+  #combo .bar{width:150px;height:4px;background:rgba(255,255,255,.15);border-radius:3px;margin:5px 0 0 auto;overflow:hidden}
+  #combo .bar i{display:block;height:100%;background:#ffb300;width:100%}
+  #skillScore{position:fixed;right:16px;top:12px;text-align:right;color:#fff;font-weight:800;font-size:20px;text-shadow:0 1px 4px #000;pointer-events:none;display:none}
+  #skillScore small{display:block;font-size:10px;color:#7dffa0;letter-spacing:2px;font-weight:600}
   #gearBtn{position:fixed;right:12px;top:10px;width:34px;height:34px;background:rgba(8,16,26,.84);border:1px solid #2c4a66;border-radius:9px;color:#9fe3ff;font-size:17px;cursor:pointer}
   #settings{position:fixed;right:12px;top:52px;width:225px;background:rgba(8,16,26,.92);border:1px solid #2c4a66;border-radius:10px;color:#dbeafe;font-size:12px;padding:12px 14px;display:none}
   #settings h3{margin:0 0 8px;font-size:12px;letter-spacing:2px;color:#7dd3fc}
@@ -60,6 +72,9 @@
   <div class="log" id="iLog"></div>
 </div>
 <div id="cue"></div>
+<div id="skillScore" id="skillScore"><span id="skScoreV">0</span><small>SKILL SCORE</small></div>
+<div id="combo"><div class="mult" id="comboMult">x2</div><div class="bankd">CHAIN</div><div class="bar"><i id="comboBar"></i></div></div>
+<div id="skills"></div>
 <div id="bigSpd"><span class="v" id="bigSpdV">0</span><span class="tr" id="bigSpdT"></span><div class="u">KNOTS · IAS</div></div>
 <button id="gearBtn">⚙</button>
 <div id="settings">
@@ -84,7 +99,9 @@
   <div><b>A / D</b>rudder / steering</div>
   <div><b>F</b>flaps 0 / 50 / 100</div>
   <div><b>T / G</b>trim up / down</div>
-  <div><b>X</b>wind &nbsp;<b>N</b>night &nbsp;<b>⚙</b>settings</div>
+  <div><b>X</b>wind &nbsp;<b>N</b>night &nbsp;<b>M</b>sound</div>
+  <div><b>🎮</b>gamepad: sticks fly · RT throttle · A brake</div>
+  <div class="tip">Skills: low passes, terrain skims, rolls & greaser landings build a combo chain. ⚙ for settings.</div>
   <div><b>Space</b>brakes (hold)</div>
   <div><b>C or V</b>camera &nbsp;<b>mouse</b>orbit</div>
   <div><b>R</b>reset &nbsp;<b>P</b>pause &nbsp;<b>H</b>help</div>
@@ -114,7 +131,7 @@ const CFG = {
   maxThrust: 5200, spoolRate: 0.7, propWash: 300,
   ctl:  { pitch: 2.2, roll: 2.4, yaw: 1.3 },
   stab: { pitch: 7.0, yaw: 4.5, dihedral: 0.8, alphaTrim: 0.045 },
-  damp: { pitch: 6.0, roll: 3.4, yaw: 3.8 },
+  damp: { pitch: 6.0, roll: 2.3, yaw: 3.8 },
   I: { pitch: 2200, yaw: 2600, roll: 1300 },
   flap: { dCL0: 0.5, dCLmax: 0.35, dCD: 0.055, rate: 0.3 },
   gearK: 43000, gearC: 3100, restY: 1.07, crashSink: 6.0, maxComp: 0.34,
@@ -181,6 +198,47 @@ addEventListener("mousemove", e => {
   orbit.lx = e.clientX; orbit.ly = e.clientY;
 });
 addEventListener("wheel", e => { orbit.dist = Math.max(7, Math.min(90, orbit.dist * (1 + e.deltaY * 0.001))); }, { passive: true });
+
+/* ==== 3b. GAMEPAD + HAPTICS ==== */
+// Analog stick flight + real dual-rumble feedback. Deadzoned, expo curve for fine control.
+const PAD = { on: false, gp: null, pitch: 0, roll: 0, yaw: 0, throttle: 0, throttleAbs: false, brake: false, prevBtn: [] };
+const dz = (v, d = 0.09) => Math.abs(v) < d ? 0 : Math.sign(v) * ((Math.abs(v) - d) / (1 - d)) ** 1.6; // deadzone + expo
+addEventListener("gamepadconnected", e => { PAD.gp = navigator.getGamepads()[e.gamepad.index]; banner("CONTROLLER READY", (e.gamepad.id || "gamepad").slice(0, 28) + " — RT throttle · sticks fly"); setTimeout(() => banner(""), 2600); rumble(0.5, 0.4, 260); });
+addEventListener("gamepaddisconnected", () => { PAD.on = false; PAD.gp = null; });
+function pollGamepad() {
+  const gps = navigator.getGamepads ? navigator.getGamepads() : [];
+  let gp = null;
+  for (const g of gps) if (g && g.connected) { gp = g; break; }
+  PAD.gp = gp;
+  if (!gp) { PAD.on = false; return; }
+  PAD.on = true;
+  const ax = gp.axes, bt = gp.buttons;
+  PAD.roll  = dz(ax[0] ?? 0);
+  PAD.pitch = dz(ax[1] ?? 0);            // stick back (+) pulls nose up, matches ↓ convention
+  PAD.yaw   = dz(ax[2] ?? 0);
+  const rt = bt[7] ? bt[7].value : 0, lt = bt[6] ? bt[6].value : 0;
+  if (rt > 0.02 || lt > 0.02) { PAD.throttleAbs = true; PAD.throttle = Math.max(0, Math.min(1, rt)); }
+  else PAD.throttleAbs = false;
+  PAD.brake = !!(bt[0] && bt[0].pressed);          // A = brakes
+  const press = i => bt[i] && bt[i].pressed && !PAD.prevBtn[i];
+  if (press(2)) S.flapSet = S.flapSet >= 1 ? 0 : S.flapSet + 0.5;   // X = flaps
+  if (press(3)) camMode = (camMode + 1) % 4;                        // Y = camera
+  if (press(1)) reset();                                            // B = reset
+  if (press(9)) { S.paused = !S.paused; }                           // start = pause
+  if (bt[4] && bt[4].pressed) S.trim = Math.max(-0.25, S.trim - 0.06 * 0.016); // LB trim down
+  if (bt[5] && bt[5].pressed) S.trim = Math.min(0.25, S.trim + 0.06 * 0.016);  // RB trim up
+  PAD.prevBtn = bt.map(b => b.pressed);
+}
+let lastRumble = 0;
+function rumble(strong, weak, ms) {
+  const gp = PAD.gp; if (!gp) return;
+  const act = gp.vibrationActuator || (gp.hapticActuators && gp.hapticActuators[0]);
+  if (!act) return;
+  try {
+    if (act.playEffect) act.playEffect("dual-rumble", { duration: ms, strongMagnitude: strong, weakMagnitude: weak });
+    else if (act.pulse) act.pulse(Math.max(strong, weak), ms);
+  } catch (e) {}
+}
 
 /* ==== 4. SCENE / WORLD ==== */
 const renderer = new THREE.WebGLRenderer({ canvas: sceneCanvas, antialias: true });
@@ -561,12 +619,16 @@ function crash(reason) {
 
 function step(h) {
   S.simTime += h;
-  // inputs
-  const inP = ovr.pitch ?? ((keys.ArrowDown ? 1 : 0) - (keys.ArrowUp ? 1 : 0));
-  const inR = ovr.roll  ?? ((keys.ArrowRight ? 1 : 0) - (keys.ArrowLeft ? 1 : 0));
-  const inY = ovr.yaw   ?? ((keys.KeyD ? 1 : 0) - (keys.KeyA ? 1 : 0));
-  S.brakes = ovr.brakes ?? !!keys.Space;
+  // inputs — analog gamepad blends with keyboard; test overrides (ovr) win over both.
+  const kP = (keys.ArrowDown ? 1 : 0) - (keys.ArrowUp ? 1 : 0);
+  const kR = (keys.ArrowRight ? 1 : 0) - (keys.ArrowLeft ? 1 : 0);
+  const kY = (keys.KeyD ? 1 : 0) - (keys.KeyA ? 1 : 0);
+  const inP = ovr.pitch ?? (PAD.on && Math.abs(PAD.pitch) > 0.06 ? PAD.pitch : kP);
+  const inR = ovr.roll  ?? (PAD.on && Math.abs(PAD.roll)  > 0.06 ? PAD.roll  : kR);
+  const inY = ovr.yaw   ?? (PAD.on && Math.abs(PAD.yaw)   > 0.06 ? PAD.yaw   : kY);
+  S.brakes = ovr.brakes ?? (!!keys.Space || (PAD.on && PAD.brake));
   if (ovr.throttle !== null) S.thrT = ovr.throttle;
+  else if (PAD.on && PAD.throttleAbs) S.thrT = PAD.throttle;  // trigger = gas pedal
   else S.thrT = Math.max(0, Math.min(1, S.thrT + ((keys.KeyW ? 1 : 0) - (keys.KeyS ? 1 : 0)) * 0.6 * h));
   if (keys.KeyT) S.trim = Math.min(0.25, S.trim + 0.1 * h);
   if (keys.KeyG) S.trim = Math.max(-0.25, S.trim - 0.1 * h);
@@ -851,7 +913,7 @@ function missionStep(alt, kt) {
     MISSION.idx++;
   }
 }
-function restartMission() { MISSION.idx = 0; MISSION.done = false; INS.cool = {}; resetScore(); reset(); say("start", "Training restarted. Set full throttle with W.", 4, 1); }
+function restartMission() { MISSION.idx = 0; MISSION.done = false; INS.cool = {}; resetScore(); resetSkills(); reset(); say("start", "Training restarted. Set full throttle with W.", 4, 1); }
 // ---- on-screen key cues: what to press RIGHT NOW ----
 function currentCue() {
   const kt = S.ias * KT, agl = S.pos.y - CFG.restY - terrainH(S.pos.x, S.pos.z), ph = S.phase;
@@ -1292,6 +1354,88 @@ function updateFX(dt) {
 }
 let prevOnGround = true, prevTouchSink = 0;
 
+/* ==== 10b. SKILLS — Forza-style skill chains, combo multiplier, haptics ==== */
+const SK = { score: 0, mult: 1, chain: 0, chainTimer: 0, popups: [], best: +(localStorage.getItem("ff_skill_best") || 0),
+             lowPassT: 0, skimT: 0, rollAccum: 0, prevRoll: 0, cooldown: {}, near: {} };
+const skillsEl = document.getElementById("skills"), comboEl = document.getElementById("combo"),
+      comboMultEl = document.getElementById("comboMult"), comboBarEl = document.getElementById("comboBar"),
+      skScoreEl = document.getElementById("skillScore"), skScoreV = document.getElementById("skScoreV");
+function award(name, base, note) {
+  if (SK.cooldown[name] !== undefined && S.simTime - SK.cooldown[name] < 1.2) return;
+  SK.cooldown[name] = S.simTime;
+  SK.chain++; SK.mult = Math.min(10, 1 + Math.floor(SK.chain / 2));
+  SK.chainTimer = 4.5;
+  const pts = Math.round(base * SK.mult);
+  SK.score += pts;
+  SK.popups.push({ name, pts, note: note || "", t: 2.6 });
+  if (SK.popups.length > 6) SK.popups.shift();
+  rumble(0.25 + Math.min(0.5, base / 400), 0.6, 130);
+  renderSkills();
+}
+function bankChain() {
+  if (SK.chain >= 2) { SK.popups.push({ name: "CHAIN BANKED", pts: 0, note: SK.chain + " skills · x" + SK.mult, t: 2.4 }); renderSkills(); }
+  SK.chain = 0; SK.mult = 1; SK.chainTimer = 0;
+  if (SK.score > SK.best) { SK.best = SK.score; try { localStorage.setItem("ff_skill_best", SK.score); } catch (e) {} }
+}
+function renderSkills() {
+  skillsEl.innerHTML = SK.popups.slice().reverse().map(p =>
+    '<div class="skill" style="opacity:' + Math.min(1, p.t) + '">' + p.name +
+    (p.pts ? ' <span class="pts">+' + p.pts + '</span>' : '') +
+    (p.note ? '<small>' + p.note + '</small>' : '') + '</div>').join("");
+  skScoreEl.style.display = SK.score > 0 ? "block" : "none";
+  skScoreV.textContent = SK.score.toLocaleString();
+}
+function skillStep(dt) {
+  if (S.crashed || S.paused) return;
+  const agl = S.pos.y - CFG.restY - terrainH(S.pos.x, S.pos.z), kt = S.ias * KT, e = attitude();
+  // chain decay
+  if (SK.chainTimer > 0) { SK.chainTimer -= dt; if (SK.chainTimer <= 0) bankChain(); }
+  // popup fade
+  let dirty = false;
+  for (const p of SK.popups) { p.t -= dt; if (p.t < 1) dirty = true; }
+  if (SK.popups.length && SK.popups[0].t <= 0) { SK.popups.shift(); dirty = true; }
+  // --- LOW PASS: fast & low over the runway ---
+  const overRwy = Math.abs(S.pos.x) < 20 && Math.abs(S.pos.z) < 600;
+  if (!S.onGround && overRwy && agl < 14 && agl > 1 && kt > 60) {
+    SK.lowPassT += dt; if (SK.lowPassT > 1.0) { award("LOW PASS", 200, "hotshot"); SK.lowPassT = 0; }
+  } else SK.lowPassT = 0;
+  // --- TERRAIN SKIM: low & fast over hills, away from the field ---
+  const th = terrainH(S.pos.x, S.pos.z);
+  if (!S.onGround && th > 20 && agl < 22 && agl > 2 && kt > 75) {
+    SK.skimT += dt; if (SK.skimT > 0.8) { award("TERRAIN SKIM", 260, "nerves of steel"); SK.skimT = 0; }
+  } else SK.skimT = 0;
+  // --- AILERON ROLL: integrate true body roll rate (robust vs. Euler gimbal in a spiral) ---
+  if (!S.onGround && agl > 40) {
+    SK.rollAccum += S.angVel.z * dt;
+    if (Math.abs(SK.rollAccum) > 2 * Math.PI * 0.9) { award("AILERON ROLL", 350, "showoff"); SK.rollAccum = 0; }
+  } else SK.rollAccum = 0;
+  // --- NEAR MISS: pass close to an obstacle without hitting it ---
+  if (!S.onGround && kt > 55) {
+    for (const o of obstacles) {
+      const cx = (o.min.x + o.max.x) / 2, cz = (o.min.z + o.max.z) / 2;
+      const d = Math.hypot(S.pos.x - cx, S.pos.z - cz);
+      const key = o.label + Math.round(cz);
+      if (d < 22 && S.pos.y < o.max.y + 14) SK.near[key] = Math.min(SK.near[key] ?? 999, d);
+      else if (SK.near[key] !== undefined) { if (SK.near[key] < 16) award("CLOSE CALL", 180, o.label + " · " + SK.near[key].toFixed(0) + "m"); delete SK.near[key]; }
+    }
+  }
+  if (dirty) renderSkills();
+  // combo HUD
+  comboEl.style.opacity = SK.chain >= 2 ? 1 : 0;
+  comboMultEl.textContent = "x" + SK.mult;
+  comboBarEl.style.width = Math.max(0, Math.min(1, SK.chainTimer / 4.5)) * 100 + "%";
+}
+// greaser landing + gate thread are awarded from their existing detection sites
+function skillLanding(sink) {
+  if (sink < 1.2) award("GREASER LANDING", 500, "buttery");
+  else if (sink < 2.2) award("CLEAN LANDING", 250, "");
+}
+function skillGate(idx, centerDist) {
+  award(centerDist < 18 ? "BULLSEYE" : "GATE", centerDist < 18 ? 300 : 150, "ring " + (idx + 1));
+}
+function resetSkills() { SK.score = 0; SK.mult = 1; SK.chain = 0; SK.chainTimer = 0; SK.popups.length = 0;
+  SK.lowPassT = SK.skimT = SK.rollAccum = 0; SK.cooldown = {}; SK.near = {}; renderSkills(); comboEl.style.opacity = 0; }
+
 /* ==== 11. LOOP + RESET + GRAPHICS SYNC ==== */
 function reset() {
   S.rpm = CFG.engine.idle; S.vacDrift = 0;
@@ -1302,6 +1446,7 @@ function reset() {
   S.crashed = false; S.reason = ""; S.onGround = true; S.wasAirborne = false;
   S.paused = false; S.vsi = 0; S.phase = "parked"; S.touchSink = 0;
   camPos.set(0, 9, 550); banner("");
+  if (typeof SK !== "undefined") { if (SK.chain >= 2) bankChain(); SK.chainTimer = 0; SK.lowPassT = SK.skimT = SK.rollAccum = 0; }
 }
 function syncGraphics(dt) {
   plane.position.copy(S.pos); plane.quaternion.copy(S.quat);
@@ -1340,10 +1485,13 @@ function syncGraphics(dt) {
     else g.material.opacity = 0.18;
   });
   // touchdown effects
-  if (!prevOnGround && S.onGround && S.touchSink > 1.2) {
-    for (const g of GEARS) { _r.copy(g.off).applyQuaternion(S.quat); puff(S.pos.x + _r.x, S.pos.y - 0.8, S.pos.z + _r.z, 2 + S.touchSink); }
-    if (S.touchSink > 3) shakeMag = 0.5 + S.touchSink * 0.15;
-    audioThump(S.touchSink);
+  if (!prevOnGround && S.onGround) {
+    if (S.touchSink > 1.2) {
+      for (const g of GEARS) { _r.copy(g.off).applyQuaternion(S.quat); puff(S.pos.x + _r.x, S.pos.y - 0.8, S.pos.z + _r.z, 2 + S.touchSink); }
+      if (S.touchSink > 3) shakeMag = 0.5 + S.touchSink * 0.15;
+      audioThump(S.touchSink);
+    }
+    if (S.wasAirborne) { rumble(Math.min(1, S.touchSink / 4), 0.5, 160); if (!S.crashed) skillLanding(S.touchSink); }
   }
   prevOnGround = S.onGround;
   updateFX(dt);
@@ -1372,16 +1520,22 @@ function syncGraphics(dt) {
   } else predictor.visible = false;
 }
 let last = performance.now(), acc = 0, fps = 60, uiT = 0;
+let prevMissionIdx = 0, stallRumbleT = 0;
 function frame(now) {
   requestAnimationFrame(frame);
   let dt = (now - last) / 1000; last = now;
   if (dt > 0.25) dt = 0.25;
   if (dt > 0) fps += (1 / dt - fps) * 0.05;
+  pollGamepad();
   if (!S.paused && !S.crashed) {
     acc += dt;
     while (acc >= H) { step(H); acc -= H; if (S.crashed) { acc = 0; break; } }
   }
-  syncGraphics(dt); updateCamera(dt); drawHUD(fps, dt); audioUpdate();
+  syncGraphics(dt); updateCamera(dt); drawHUD(fps, dt); audioUpdate(); skillStep(dt);
+  // gate-thread skill (watch mission index advancing) + stall haptic buzz
+  if (MISSION.idx > prevMissionIdx) { skillGate(prevMissionIdx, 20); prevMissionIdx = MISSION.idx; }
+  if (MISSION.idx < prevMissionIdx) prevMissionIdx = MISSION.idx;
+  if (S.stall && !S.onGround && !S.crashed) { stallRumbleT += dt; if (stallRumbleT > 0.3) { rumble(0.15, 0.55, 120); stallRumbleT = 0; } }
   uiT += dt; if (uiT > 0.2) { uiT = 0; updateInstructorUI(); pumpSpeech(); updateCue(); }
   renderer.render(scene, camera);
 }
@@ -1404,9 +1558,12 @@ window.SIM = {
       stall: S.stall, over: S.over, phase: S.phase, lastLine: INS.lastLine,
       rpm: Math.round(S.rpm), night: S.night, vis: S.vis, turb: S.turb,
       failEngine: S.fail.engine, failVacuum: S.fail.vacuum, betaDeg: +(S.beta * 180 / Math.PI).toFixed(1),
-      fps: Math.round(fps), cam: CAM_NAMES[camMode], missionIdx: MISSION.idx, missionDone: MISSION.done
+      fps: Math.round(fps), cam: CAM_NAMES[camMode], missionIdx: MISSION.idx, missionDone: MISSION.done,
+      padOn: PAD.on, skillScore: SK.score, skillMult: SK.mult, skillChain: SK.chain
     };
   },
+  skills() { return { score: SK.score, mult: SK.mult, chain: SK.chain, best: SK.best, popups: SK.popups.map(p => p.name) }; },
+  padState() { return { on: PAD.on, pitch: +PAD.pitch.toFixed(2), roll: +PAD.roll.toFixed(2), throttle: +PAD.throttle.toFixed(2) }; },
   surfaces() {
     return { ailL: +surf.ailL.rotation.x.toFixed(3), ailR: +surf.ailR.rotation.x.toFixed(3),
              elev: +surf.elev.rotation.x.toFixed(3), rud: +surf.rud.rotation.y.toFixed(3),
@@ -1415,7 +1572,7 @@ window.SIM = {
   transcript() { return INS.transcript.map(x => x.text); },
   set(o) { Object.assign(ovr, o); },
   clear() { for (const k in ovr) ovr[k] = null; },
-  warp(sec) { const n = Math.round(sec / H); for (let i = 0; i < n && !S.crashed; i++) step(H); syncGraphics(0); },
+  warp(sec) { const n = Math.round(sec / H); for (let i = 0; i < n && !S.crashed; i++) { step(H); skillStep(H); } syncGraphics(0); },
   setFlaps(v) { S.flapSet = v; },
   setTrim(v) { S.trim = Math.max(-0.25, Math.min(0.25, v)); },
   setWind(b) { S.windOn = !!b; },

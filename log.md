@@ -1,5 +1,14 @@
 # Log — Flight Sim Vertical Core
 
+## [2026-07-08] build | v6 leg: gamepad + haptics + Forza-style skills
+Analog gamepad flight (deadzone + 1.6-expo curve, sticks fly / RT throttle / A brake / X flaps / Y cam), blended with keyboard, ovr still wins so tests stay deterministic. Real dual-rumble haptics on touchdown (scaled by sink), stall buzz, and every skill award. Forza-style skill engine: LOW PASS, TERRAIN SKIM, AILERON ROLL, CLOSE CALL, GATE/BULLSEYE, GREASER/CLEAN LANDING, with a combo multiplier chain (x1–x10) that banks after 4.5 s idle and forfeits on crash; persistent best in localStorage. Roll responsiveness bumped (damp.roll 3.4→2.3) for aerobatic feel.
+
+## [2026-07-08] fix | Two real bugs found by the evaluator
+1. Mid-session macOS revoked file access to the Desktop folder (EPERM on every open; git couldn't read cwd) — not a code bug; resumed when access returned, applied the one deferred warp() line. 2. Aileron-roll skill never fired: I tracked roll via the YXZ Euler angle, which redistributes into pitch/yaw when the plane spirals (read 45° after 8 s of full aileron). Fix: integrate the true body roll rate (S.angVel.z·dt) instead — robust against gimbal. Now fires at a real 360. Also made skills testable by driving skillStep(H) inside warp(), so the deterministic harness exercises the same path as live play.
+
+## [2026-07-08] test | v6 grade
+Control signs after the damping change: roll −42.1° (crisper), pitch +13.5°. Hands-off 20 s: 0.2° bank, no tumble. Takeoff z=194 (unchanged). Skills via warp: LOW PASS +200, GREASER +500×mult, AILERON ROLL +350 all fire; combo chain builds. ~150 FPS, zero console errors. (The 41 FPS in an earlier eval was the huge synchronous test warp blocking rAF, not a regression — confirmed on a clean idle read.)
+
 ## [2026-07-07] build | v5 leg: sound, premium-voice pipeline, plane details, flap limit — deployed d1d5e93
 Audio: Web Audio soundscape, zero assets — engine (two detuned saws, pitch follows RPM, quiets on engine failure), wind noise (loudness/pitch follow airspeed), stall horn, touchdown thump; unlocks on first key/click per browser policy; M or settings toggle. Premium voice: scripts/gen-voice.py pre-renders all 25 instructor lines with Deepgram at BUILD time (key never ships — a runtime key in public HTML would be scraped in hours); sim fetches voice/manifest.json and prefers clips, falling back to the tuned browser voice. Plane: pilot figure (hidden in cockpit view), wheel fairings on suspension legs, spinner, fuselage seams. Training rule: flap white-arc limit 96 kt — buffet torque, FLAP SPEED warning, instructor line, F-cue. All regressions re-verified identical (takeoff z=193, landing sink 1.26); zero console errors; 61 FPS. Sketchfab attempt: Blender MCP reachable but Sketchfab API key not configured in the Blender panel — parked pending user key; no generation budget spent.
 

@@ -9,6 +9,10 @@ Hold **W** for full throttle → pull **↓** at 55 kt → follow the voice inst
 
 The on-screen cue bar always shows the exact key to press next. **H** opens the full controls. **⚙** has night mode, wind, turbulence, visibility, and practice failures (engine out, vacuum failure).
 
+**Gamepad:** plug in a controller — sticks fly, right trigger is throttle, A brakes, X flaps, Y camera. It rumbles on touchdown, stalls, and skill awards.
+
+**Skills (Forza-style):** low passes, terrain skims, aileron rolls, close calls, and greaser landings build a **combo chain** with a rising multiplier. The chain banks when you stop stunting and forfeits if you crash. Your best skill score persists.
+
 ## Built with the LOOPS method
 Spec → contract of testable assertions → build → deterministic browser evaluation (`window.SIM.warp()`) → repair from the trace. The paper trail is in this repo: [contract.md](contract.md) (63 graded assertions), [log.md](log.md) (every bug and what it taught), [sprint-spec.md](sprint-spec.md), [progress.md](progress.md), [feature_list.json](feature_list.json).
 
