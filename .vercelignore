@@ -1,0 +1,13 @@
+.git
+.DS_Store
+artifacts
+docs
+scripts
+*.md
+assets/source-packs
+assets/source-planes
+assets/source-sounds
+assets/source-world
+assets/cockpit/source
+*.blend
+*.blend1

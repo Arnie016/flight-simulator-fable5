@@ -1,0 +1,21 @@
+.vercel
+
+# Generated browser proof is local by default. Keep only the curated Devpost set.
+artifacts/*
+!artifacts/devpost-screenshots/
+!artifacts/devpost-screenshots/*.png
+
+# Local runtime secrets and OS files.
+.env
+.env.local
+.DS_Store
+node_modules/
+
+# Upstream source packs stay outside the judged repository; runtime selections
+# have their own provenance manifests.
+assets/source-packs/
+*.blend1
+
+# Keep weak/debug captures local even inside the curated proof folder.
+artifacts/devpost-screenshots/01-live-guided-flight.png
+artifacts/devpost-screenshots/03-grounded-flight-lesson.png

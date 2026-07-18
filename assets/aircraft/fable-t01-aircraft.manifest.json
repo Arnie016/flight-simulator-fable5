@@ -1,0 +1,123 @@
+{
+  "asset": "Fable T-01 Trainer",
+  "status": "visual handoff baseline",
+  "license": "Original project asset",
+  "coordinate_contract": {
+    "units": "meters",
+    "blender_forward": "+Y",
+    "blender_up": "+Z",
+    "three_forward": "-Z",
+    "three_up": "+Y"
+  },
+  "physics_authority": "Existing procedural Three.js aircraft and deterministic 120 Hz flight model",
+  "required_lod0_nodes": [
+    "FableT01_Root",
+    "LOD0_Fuselage",
+    "LOD0_Cowling",
+    "LOD0_Canopy",
+    "LOD0_Wing_L",
+    "LOD0_Wing_R",
+    "LOD0_Aileron_L",
+    "LOD0_Aileron_R",
+    "LOD0_Flap_L",
+    "LOD0_Flap_R",
+    "LOD0_Elevator_L",
+    "LOD0_Elevator_R",
+    "LOD0_Rudder",
+    "LOD0_Propeller_Root",
+    "LOD0_Propeller_Blade_A",
+    "LOD0_Propeller_Blade_B",
+    "LOD0_Gear_Nose",
+    "LOD0_Gear_Main_L",
+    "LOD0_Gear_Main_R",
+    "LOD0_Wheel_Nose",
+    "LOD0_Wheel_Main_L",
+    "LOD0_Wheel_Main_R",
+    "LOD0_Instrument_Panel",
+    "SOCKET_Camera_Cockpit",
+    "SOCKET_Camera_Chase",
+    "SOCKET_Cargo_Hardpoint",
+    "SOCKET_Landing_Light"
+  ],
+  "lod_ranges_m": {
+    "lod0": [
+      0,
+      120
+    ],
+    "lod1": [
+      120,
+      320
+    ],
+    "lod2": [
+      320,
+      null
+    ]
+  },
+  "triangle_budgets": {
+    "lod0": 12000,
+    "lod1": 3500,
+    "lod2": 900,
+    "collision": 100
+  },
+  "triangles": {
+    "lod0": 2536,
+    "lod1": 552,
+    "lod2": 216,
+    "collision": 48
+  },
+  "bounds": {
+    "min_blender_xyz": [
+      -5.856,
+      -4.05,
+      -1.37
+    ],
+    "max_blender_xyz": [
+      5.856,
+      4.05,
+      2.16
+    ],
+    "dimensions_m": [
+      11.712,
+      8.1,
+      3.53
+    ]
+  },
+  "files": {
+    "lod0": {
+      "path": "assets/aircraft/fable-t01-aircraft.glb",
+      "bytes": 150300,
+      "sha256": "e0a34cc9af4f7b3e99098e2ddafcb961e7a5e73d8d8c4f6d9ec8ee245b1c0dd3"
+    },
+    "lod1": {
+      "path": "assets/aircraft/fable-t01-aircraft-lod1.glb",
+      "bytes": 35236,
+      "sha256": "f2d15e38a52fbf074ab3c57eb915705c1e5257543ca600ae52819d66d309bdd9"
+    },
+    "lod2": {
+      "path": "assets/aircraft/fable-t01-aircraft-lod2.glb",
+      "bytes": 18028,
+      "sha256": "9ef3be5e698fdf8b99852fb6fb7bdb006cab5f4e4f250158c4cf5c320d5ea36f"
+    },
+    "collision": {
+      "path": "assets/aircraft/fable-t01-aircraft-collision.glb",
+      "bytes": 6944,
+      "sha256": "339a3098317957fd13fa79212096ad2cff203e634acf6680e6a86c7ef8d45e1e"
+    },
+    "blend": {
+      "path": "assets/aircraft/fable-t01-aircraft.blend",
+      "bytes": 174843,
+      "sha256": "5f5509743a221ddb31cf200e6b9f71fd1c4eaa3855e33a5c503676145303f7bf"
+    },
+    "preview": {
+      "path": "artifacts/fable-t01-aircraft-handoff.png",
+      "bytes": 2189443,
+      "sha256": "abf2bc85731a78ca7e3b121deb8a4a5f8053457e4551a0a1ec9433c322c27233"
+    }
+  },
+  "pbr": {
+    "metallic_roughness": true,
+    "uv0": true,
+    "normal_bake": false,
+    "note": "Bake-ready UV baseline; production normal bake requires a reviewed high-poly source."
+  }
+}

@@ -1,0 +1,126 @@
+{
+  "version": 1,
+  "source": "Fable Flight Three.js world captures",
+  "width": 1040,
+  "height": 460,
+  "files": [
+    {
+      "id": "academy",
+      "name": "Academy Airfield",
+      "file": "academy.webp",
+      "bytes": 27232,
+      "target": [
+        0,
+        0
+      ],
+      "bounds": null
+    },
+    {
+      "id": "breakwater",
+      "name": "Breakwater Bay",
+      "file": "breakwater.webp",
+      "bytes": 31064,
+      "target": [
+        -897.8,
+        -350.4
+      ],
+      "bounds": [
+        831.2,
+        83.5,
+        601.3
+      ]
+    },
+    {
+      "id": "alpineRidge",
+      "name": "Alpine Rescue Ridge",
+      "file": "alpineRidge.webp",
+      "bytes": 28194,
+      "target": [
+        -980,
+        250
+      ],
+      "bounds": null
+    },
+    {
+      "id": "stormhaven",
+      "name": "Stormhaven",
+      "file": "stormhaven.webp",
+      "bytes": 11740,
+      "target": [
+        -690,
+        245
+      ],
+      "bounds": null
+    },
+    {
+      "id": "redMesa",
+      "name": "Red Mesa Outpost",
+      "file": "redMesa.webp",
+      "bytes": 24228,
+      "target": [
+        -1010,
+        180
+      ],
+      "bounds": null
+    },
+    {
+      "id": "frontierField",
+      "name": "Frontier Field",
+      "file": "frontierField.webp",
+      "bytes": 18620,
+      "target": [
+        2000,
+        -600
+      ],
+      "bounds": null
+    },
+    {
+      "id": "silverLake",
+      "name": "Silver Lake",
+      "file": "silverLake.webp",
+      "bytes": 33904,
+      "target": [
+        3200,
+        -3200
+      ],
+      "bounds": null
+    },
+    {
+      "id": "kauriTownship",
+      "name": "Kauri Township",
+      "file": "kauriTownship.webp",
+      "bytes": 34744,
+      "target": [
+        1457.8,
+        1826.3
+      ],
+      "bounds": [
+        657.5,
+        73.2,
+        673.8
+      ]
+    },
+    {
+      "id": "shepherdHighlands",
+      "name": "Shepherd Highlands",
+      "file": "shepherdHighlands.webp",
+      "bytes": 20186,
+      "target": [
+        -2400,
+        1900
+      ],
+      "bounds": null
+    },
+    {
+      "id": "emberRuins",
+      "name": "Ember Ruins",
+      "file": "emberRuins.webp",
+      "bytes": 23138,
+      "target": [
+        3000,
+        2000
+      ],
+      "bounds": null
+    }
+  ]
+}
