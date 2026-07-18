@@ -7,7 +7,7 @@ const {chromium}=require("playwright");
 
 const project=path.resolve(__dirname,"..");
 const artifacts=path.join(project,"artifacts");
-const baseUrl=process.env.FABLE_URL||"http://127.0.0.1:8643";
+const baseUrl=process.env.FABLE_URL||"http://127.0.0.1:8644";
 const inside=(rect,width,height)=>rect.left>=0&&rect.right<=width&&rect.top>=0&&rect.bottom<=height;
 
 async function main(){
@@ -46,7 +46,7 @@ async function main(){
   const mobileAction=await page.evaluate(()=>({state:SIM.cockpitTutor(),electrical:SIM.electrical(),systems:SIM.cockpitSystems()}));
 
   const health=await fetch(baseUrl+"/api/realtime/health").then(response=>response.json());
-  const serverSource=fs.readFileSync(path.join(project,"server/fable-flight-server.mjs"),"utf8");
+  const serverSource=fs.readFileSync(path.join(project,"server/aviator-session.mjs"),"utf8");
   const checks={
     realtimeStartsMeasuredScenario:voiceStart.output?.ok&&voiceStart.state.mode==="scenario"&&voiceStart.state.scenario?.id==="alternator_bus"&&voiceStart.state.scenario.stage==="detect"&&voiceStart.state.scenario.observed.electrical_source==="BATT"&&voiceStart.sent.some(event=>event.type==="response.create"),
     diagnosisUsesLiveBus:voiceStart.lock==="alternator"&&voiceStart.systems.source==="BATT"&&voiceStart.systems.volts<12&&voiceStart.panel.copy.includes("bus is on the battery")&&voiceStart.panel.band.includes("BATTERY DISCHARGING"),
@@ -57,7 +57,7 @@ async function main(){
     hardwareFaultRejectedTruthfully:rejectedFault.ok===false&&rejectedFault.error.includes("hardware fault")&&rejectedFault.error.includes("cannot restore")&&rejectedFault.observed.alternator_fault===true,
     healthyBusRejected:rejectedHealthy.ok===false&&rejectedHealthy.error.includes("already carrying the bus")&&rejectedHealthy.observed.electrical_source==="ALT",
     mobilePhysicalActionWorks:mobile.overflow<=0&&inside(mobile.panel,390,844)&&inside(mobile.label,390,844)&&mobile.panel.bottom<=mobile.label.top&&mobile.label.bottom<=mobile.dock.top&&mobile.label.display==="grid"&&mobile.label.text.includes("ALTERNATOR")&&mobile.state.scenario.stage==="act"&&mobile.shadePointer==="none"&&mobilePoint.x>=0&&mobilePoint.x<=390&&mobilePoint.y>=0&&mobilePoint.y<=844&&mobileAction.electrical.source==="ALT"&&mobileAction.state.scenario.stage==="complete",
-    realtimeToolConfigured:health.model==="gpt-realtime-2"&&health.configured===true&&serverSource.includes('"alternator_bus"')&&serverSource.includes("Never imply that cycling a switch repairs alternator_fault true"),
+    realtimeToolConfigured:health.model==="gpt-realtime-2"&&health.configured===true&&serverSource.includes('"alternator_bus"')&&serverSource.includes("The pilot must operate the physical control; never stage or claim recovery early"),
     zeroConsoleErrors:errors.length===0
   };
   const report={ok:Object.values(checks).every(Boolean),checks,voiceStart,action,desktopPoint,complete,rejectedFault,rejectedHealthy,mobilePoint,mobile,mobileAction,health,errors};

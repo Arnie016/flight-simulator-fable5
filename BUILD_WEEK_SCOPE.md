@@ -2,17 +2,9 @@
 
 Submission window: July 13–21, 2026.
 
-This file separates the pre-existing Fable Flight simulator from the meaningful Build Week extension. Git history and the demo should use the same boundary.
+## Build Week implementation
 
-## Pre-existing foundation
-
-- Browser-based Three.js flight simulation.
-- Basic flight controls, missions, scenery, and scoring.
-- Existing public GitHub Pages deployment.
-
-These capabilities provide the environment but are not presented as new Build Week work.
-
-## Post–July 13 extension
+All capabilities presented in this submission were built during the July 13–21 Build Week window. Earlier repository shells, references, or unrelated experiments are not part of the judged claim. Git commits preserve the implementation and proof as it evolved during the event.
 
 - Physical Blender-authored cockpit instrument, yoke, compass, engine-quadrant, systems-console, and flight-control assets.
 - Direct manipulation of cockpit controls with authoritative simulator-state parity.
@@ -32,11 +24,11 @@ These capabilities provide the environment but are not presented as new Build We
 
 ## Commit policy
 
-- Use `build-week:` commit subjects for the post–July 13 extension.
+- Use `build-week:` commit subjects for the post–July 13 implementation.
 - Commit product changes, representative proof, and verification scripts together when they describe one coherent capability.
 - Do not commit API keys, `.env` files, private prompts, raw microphone data, or the full generated screenshot directory.
 - Tag the final judged state after the human Realtime test, README verification, and demo recording.
 
 ## Submission language
 
-The demo and Devpost description must say that the simulator is the pre-existing foundation and that the adaptive physical-cockpit teaching layer is the Build Week extension. The final description remains a human-authored submission.
+The demo and Devpost description must say that every submitted capability was built after July 13. Do not describe unrelated repository context as submitted work. The final description remains human-authored.
