@@ -1,0 +1,21 @@
+{
+  "source": "Mixkit Free Sound Effects",
+  "license": "https://mixkit.co/license/#sound-effects",
+  "downloaded_at": "2026-07-11",
+  "files": [
+    {"file": "jet-plane-hum-flying.wav", "source_id": 1574, "download_url": "https://assets.mixkit.co/active_storage/sfx/1574/1574.wav", "title": "Jet plane hum flying", "role": "distant traffic"},
+    {"file": "airplane-flyby-rumble.wav", "source_id": 1588, "download_url": "https://assets.mixkit.co/active_storage/sfx/1588/1588.wav", "title": "Airplane flying by rumble", "role": "distant traffic"},
+    {"file": "low-airplane-flying-over.wav", "source_id": 1579, "download_url": "https://assets.mixkit.co/active_storage/sfx/1579/1579.wav", "title": "Low airplane flying over", "role": "distant traffic"},
+    {"file": "fast-jet-engine-flyover.wav", "source_id": 1580, "download_url": "https://assets.mixkit.co/active_storage/sfx/1580/1580.wav", "title": "Fast jet engine flying over", "role": "distant traffic"},
+    {"file": "transport-airplane-rumble.wav", "source_id": 1590, "download_url": "https://assets.mixkit.co/active_storage/sfx/1590/1590.wav", "title": "Transport airplane flying rumble", "role": "distant traffic"},
+    {"file": "helicopter-propellers-sky.wav", "source_id": 2704, "download_url": "https://assets.mixkit.co/active_storage/sfx/2704/2704.wav", "title": "Helicopter propellers in the sky", "role": "distant traffic"},
+    {"file": "wind-blowing-ambience.wav", "source_id": 2658, "download_url": "https://assets.mixkit.co/active_storage/sfx/2658/2658.wav", "title": "Wind blowing ambience", "role": "coastal and frontier wind"},
+    {"file": "mountain-top-wind.wav", "source_id": 1267, "download_url": "https://assets.mixkit.co/active_storage/sfx/1267/1267.wav", "title": "Wind in the top of the mountain", "role": "alpine wind"},
+    {"file": "light-rain-loop.wav", "source_id": 2393, "download_url": "https://assets.mixkit.co/active_storage/sfx/2393/2393.wav", "title": "Light rain loop", "role": "storm rain"},
+    {"file": "thunder-rumble-storm.wav", "source_id": 2395, "download_url": "https://assets.mixkit.co/active_storage/sfx/2395/2395.wav", "title": "Thunder rumble during a storm", "role": "storm thunder"},
+    {"file": "radio-static-fx.wav", "source_id": 2561, "download_url": "https://assets.mixkit.co/active_storage/sfx/2561/2561.wav", "title": "Radio static FX", "role": "nonverbal realtime radio bed"},
+    {"file": "radio-static-crackles.wav", "source_id": 1446, "download_url": "https://assets.mixkit.co/active_storage/sfx/1446/1446.wav", "title": "Radio noise static and crackles", "role": "nonverbal realtime radio bed"},
+    {"file": "radio-ptt-ping.wav", "source_id": 2544, "download_url": "https://assets.mixkit.co/active_storage/sfx/2544/2544.wav", "title": "Metal button radio ping", "role": "realtime transmit acknowledgement"},
+    {"file": "radio-interference.wav", "source_id": 2548, "download_url": "https://assets.mixkit.co/active_storage/sfx/2548/2548.wav", "title": "Digital signal interference", "role": "weather and terrain radio degradation"}
+  ]
+}
