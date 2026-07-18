@@ -7,7 +7,7 @@ const {chromium}=require("playwright");
 
 const project=path.resolve(__dirname,"..");
 const artifacts=path.join(project,"artifacts");
-const baseUrl=process.env.FABLE_URL||"http://127.0.0.1:8643";
+const baseUrl=process.env.FABLE_URL||"http://127.0.0.1:8644";
 const inside=(rect,width,height)=>rect.left>=0&&rect.right<=width&&rect.top>=0&&rect.bottom<=height;
 
 async function main(){
@@ -54,7 +54,7 @@ async function main(){
   const mobileComplete=await page.evaluate(()=>({state:SIM.cockpitTutor(),ignition:SIM.ignition(),engine:SIM.engineManagement(),systems:SIM.cockpitSystems()}));
 
   const health=await fetch(baseUrl+"/api/realtime/health").then(response=>response.json());
-  const serverSource=fs.readFileSync(path.join(project,"server/fable-flight-server.mjs"),"utf8");
+  const serverSource=fs.readFileSync(path.join(project,"server/aviator-session.mjs"),"utf8");
   const checks={
     realtimeStartsGroundedLesson:voiceStart.output?.ok&&voiceStart.state.scenario?.id==="cold_start"&&voiceStart.state.scenario.stage==="diagnose"&&voiceStart.state.scenario.observed.start_blockers.includes("BATTERY")&&voiceStart.state.scenario.observed.start_blockers.includes("MIXTURE")&&voiceStart.state.scenario.observed.start_blockers.includes("THROTTLE")&&voiceStart.sent.some(event=>event.type==="response.create"),
     batteryIsPhysical:batteryStage.state.scenario.stage==="battery"&&batteryStage.lock==="battery"&&batteryStage.shade==="none"&&batteryStage.next.disabled&&mixtureStage.electrical.masterOn&&mixtureStage.state.scenario.stage==="mixture"&&mixtureStage.lock==="mixture",
@@ -64,7 +64,7 @@ async function main(){
     blackBoxSupportsDebrief:complete.events.some(event=>event.type==="electrical_switch"&&event.data.control==="battery_master"&&event.data.on===true)&&complete.events.some(event=>event.type==="cockpit_control"&&event.data.control==="mixture")&&complete.events.some(event=>event.type==="cockpit_control"&&event.data.control==="throttle")&&complete.events.some(event=>event.type==="ignition_switch"&&event.data.selector==="start"&&event.data.success===true)&&complete.events.some(event=>event.type==="cockpit_scenario"&&event.data.action==="complete"&&event.data.engine_running===true)&&complete.facts.some(text=>text.includes("Cold-start drill verified engine running")),
     impossibleStatesRejected:rejectedRunning.ok===false&&rejectedRunning.error.includes("already running")&&rejectedFault.ok===false&&rejectedFault.error.includes("hardware fault")&&rejectedDead.ok===false&&rejectedDead.error.includes("depleted"),
     mobilePhysicalStartWorks:mobile.overflow<=0&&inside(mobile.panel,390,844)&&inside(mobile.label,390,844)&&mobile.panel.bottom<=mobile.label.top&&mobile.label.bottom<=mobile.dock.top&&mobile.label.display==="grid"&&mobile.label.text.includes("MAGNETO")&&mobile.state.scenario.stage==="start"&&mobile.shade==="none"&&mobilePoint.x>=0&&mobilePoint.x<=390&&mobilePoint.y>=0&&mobilePoint.y<=844&&mobileComplete.state.scenario.stage==="complete"&&mobileComplete.ignition.selector==="both"&&mobileComplete.engine.running,
-    realtimeToolConfigured:health.model==="gpt-realtime-2"&&health.configured===true&&serverSource.includes('"cold_start"')&&serverSource.includes("never claim start succeeded"),
+    realtimeToolConfigured:health.model==="gpt-realtime-2"&&health.configured===true&&serverSource.includes('"cold_start"')&&serverSource.includes("never stage or claim recovery early"),
     zeroConsoleErrors:errors.length===0
   };
   const report={ok:Object.values(checks).every(Boolean),checks,voiceStart,batteryStage,batteryPoint,mixtureStage,mixturePoint,throttleStage,throttlePoint,startStage,ignitionPoint,complete,rejectedRunning,rejectedFault,rejectedDead,mobilePoint,mobile,mobileComplete,health,errors};
