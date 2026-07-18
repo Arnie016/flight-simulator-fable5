@@ -3482,7 +3482,7 @@ function coldStartScenarioPresentation(){
   if(stage==="start")return{step:3,focus:"ignition",title:"Engage the starter",live:"MAG "+ignition.selector.toUpperCase(),band:"PHYSICAL KEY · SELECT START",copy:"Turn the physical magneto key to START. The lesson can verify the attempt and its blockers, but it cannot crank the engine for you.",next:"USE PHYSICAL KEY",disabled:true};
   if(stage==="verify")return{step:4,focus:"ignition",title:"Verify ignition and RPM",live:Math.round(S.rpm)+" RPM",band:"ENGINE RUNNING · RETURNING BOTH",copy:"The engine has fired. Confirm the spring return to BOTH and a stable idle before adding power.",next:"VERIFYING",disabled:true};
   if(stage==="fault")return{step:3,focus:"ignition",title:"Start unavailable",live:"ENGINE FAULT",band:"MAINTENANCE REQUIRED",copy:"The modeled engine fault blocks start. Repeated cranking is not a repair; stop the procedure and resolve the fault.",next:"END DRILL",disabled:false};
-  if(stage==="complete")return{step:4,focus:"ignition",title:"Engine start verified",live:Math.round(S.rpm)+" RPM",band:"MAG BOTH · ENGINE RUNNING",copy:"Start is verified from live ignition, engine, and RPM telemetry. The next action is the departure check, not immediate full throttle.",next:"DONE",disabled:false};
+  if(stage==="complete")return{step:4,focus:"ignition",title:"Engine start verified",live:Math.round(S.rpm)+" RPM",band:"MAG BOTH · ENGINE RUNNING",copy:"Start is verified from live ignition, engine, and RPM telemetry. The next action is the departure check, not immediate full throttle.",next:ACTIVE_SYSTEMS_LAB.id&&ACTIVE_SYSTEMS_LAB.completed?"RETURN TO ATLAS":"DONE",disabled:false};
   return{step:1,focus:"ignition",title:"Read the start state",live:"ENGINE "+(engine.running?"RUN":"STOP"),band:blockers.length?"BLOCKERS · "+blockers.join(" · "):"CONFIG READY",copy:blockers.length?"The engine is stopped. Read the live blockers first; the lesson will move to each physical control in a safe sequence.":"The engine is stopped and the start configuration is ready. Locate the magneto key before engaging it.",next:"BEGIN CONFIG",disabled:false};
 }
 function fuelScenarioPresentation(){
@@ -3524,7 +3524,7 @@ function syncCockpitTutorScenario(){
     if(before!==COCKPIT_TUTOR.scenarioStage&&["battery","mixture","throttle","start"].includes(before))blackBoxRecord("cockpit_scenario",{scenario:"cold_start",action:"control_satisfied",source:COCKPIT_TUTOR.source,control:before,next_stage:COCKPIT_TUTOR.scenarioStage,battery_master_on:batteryMasterOn(),mixture_percent:Math.round(S.mixture*100),throttle_percent:Math.round(S.thrT*100),ignition_selector:ignition.selector,start_blockers:[...ignition.start_blockers]},"training");
     if(before!==COCKPIT_TUTOR.scenarioStage&&COCKPIT_TUTOR.scenarioStage==="verify")blackBoxRecord("cockpit_scenario",{scenario:"cold_start",action:"engine_fired",source:COCKPIT_TUTOR.source,ignition_selector:ignition.selector,engine_running:engine.running,rpm:Math.round(S.rpm)},"training");
     if(before!==COCKPIT_TUTOR.scenarioStage&&COCKPIT_TUTOR.scenarioStage==="fault")blackBoxRecord("cockpit_scenario",{scenario:"cold_start",action:"hardware_fault",source:COCKPIT_TUTOR.source,engine_fault:true,engine_running:engine.running,rpm:Math.round(S.rpm)},"warning");
-    if(COCKPIT_TUTOR.scenarioStage==="complete"&&!COCKPIT_TUTOR.scenarioCompleted){COCKPIT_TUTOR.scenarioCompleted=true;const elapsed=Math.max(0,S.simTime-COCKPIT_TUTOR.scenarioStartedAt);blackBoxRecord("cockpit_scenario",{scenario:"cold_start",action:"complete",source:COCKPIT_TUTOR.source,recovery_s:+elapsed.toFixed(2),battery_master_on:batteryMasterOn(),mixture_percent:Math.round(S.mixture*100),throttle_percent:Math.round(S.thrT*100),ignition_selector:ignition.selector,engine_running:engine.running,rpm:Math.round(S.rpm)},"outcome");if(AVIATOR.status==="LIVE")relayAviatorInstruction("cold-start-scenario-complete","Engine start verified from live ignition and RPM telemetry. Give one short debrief line and direct the pilot to the departure check.",2);}
+    if(COCKPIT_TUTOR.scenarioStage==="complete"&&!COCKPIT_TUTOR.scenarioCompleted){COCKPIT_TUTOR.scenarioCompleted=true;const elapsed=Math.max(0,S.simTime-COCKPIT_TUTOR.scenarioStartedAt),observed={battery_master_on:batteryMasterOn(),mixture_percent:Math.round(S.mixture*100),throttle_percent:Math.round(S.thrT*100),ignition_selector:ignition.selector,engine_running:engine.running,rpm:Math.round(S.rpm)};blackBoxRecord("cockpit_scenario",{scenario:"cold_start",action:"complete",source:COCKPIT_TUTOR.source,recovery_s:+elapsed.toFixed(2),...observed},"outcome");if(ACTIVE_SYSTEMS_LAB.id)completeSystemsLab(ACTIVE_SYSTEMS_LAB.id,elapsed,observed);if(AVIATOR.status==="LIVE")relayAviatorInstruction("cold-start-scenario-complete","Engine start verified from live ignition and RPM telemetry. Give one short debrief line and direct the pilot to the departure check.",2);}
   }
   const presentation=cockpitTutorScenarioPresentation(),physicalFocus=COCKPIT_INSTRUMENT_FOCUS.locked||COCKPIT_ENGINE_FOCUS.locked||COCKPIT_SYSTEMS_FOCUS.locked||"";if(COCKPIT_TUTOR.control!==presentation.focus||physicalFocus!==presentation.focus){COCKPIT_TUTOR.control=presentation.focus;setCockpitTutorPhysicalFocus(presentation.focus);}
 }
@@ -4113,6 +4113,7 @@ function detectPhase() {
   if (S.stall && !S.onGround) return "stall";
   if (S.onGround) {
     if (S.wasAirborne && S.vel.length() > 6) return "rollout";
+    if (!engineMixtureState().running && S.vel.length() < 1.5) return "parked";
     if (S.thrA > 0.55 && kt < 50) return "takeoff-roll";
     if (S.thrA > 0.5 && kt >= 50) return "rotation";
     if (S.vel.length() < 1.5 && S.thrA < 0.15) return "parked";
@@ -4514,6 +4515,12 @@ const TRAINING_DISCIPLINES = Object.freeze({
 });
 const SYSTEMS_LAB_MODULES = Object.freeze([
   Object.freeze({
+    id:"academy-cold-start", scenario:"cold_start", discipline:"systems", location_id:"academy", level_id:"circuit",
+    title:"Cold-Start Sequence", difficulty:"FOUNDATION", tier:1, system:"ENGINE START", completionXp:150,
+    briefing:"Configure BAT, mixture, throttle, and magnetos to start from a cold cockpit.",
+    objective:"Clear each measured starter blocker, engage START physically, and verify BOTH with stable idle RPM."
+  }),
+  Object.freeze({
     id:"pitot-icing-recovery", scenario:"pitot_icing", discipline:"systems", location_id:"stormhaven", level_id:"storm",
     title:"Pitot-Icing Recovery", difficulty:"ADVANCED", tier:3, system:"AIR DATA", completionXp:160,
     briefing:"Recover trustworthy airspeed in visible moisture using the physical PITOT heat rocker.",
@@ -4549,17 +4556,20 @@ function completeSystemsLab(id,recoverySeconds,observed={}){
   return true;
 }
 function stageSystemsLab(module){
+  if(module.scenario==="cold_start"){S.fail.engine=false;S.ignition="off";S.engineIgnited=false;S.rpm=0;S.thrT=.6;S.thrA=0;S.mixture=.05;Object.assign(S.electrical,{masterOn:false,alternatorOn:false,battery:1,load:0,low:false,dead:false});updateElectrical(0);return"Engine stopped. Read the BAT, MIX, and THR blockers, then clear each with the physical cockpit controls.";}
   if(module.scenario==="pitot_icing"){S.pitotHeatOn=false;S.pitotIce=.42;updateElectrical(0);return"IAS disagrees with known pitch and power. Diagnose first; then use the physical PITOT heat rocker.";}
   if(module.scenario==="alternator_bus"){S.fail.alternator=false;Object.assign(S.electrical,{masterOn:true,alternatorOn:false,battery:1,load:0,low:false,dead:false});updateElectrical(0);return"The engine is running but the bus source is BATT. Confirm 12.8 volts, then use the physical ALT rocker.";}
   return"Read the measured system state before operating the physical control.";
 }
 function systemsLabObserved(module){
+  if(module.scenario==="cold_start"){const electrical=electricalState(),ignition=ignitionSystemState(),engine=engineMixtureState();return{battery_master_on:electrical.masterOn,battery_percent:Math.round(electrical.battery*100),volts:+electrical.volts.toFixed(1),mixture_percent:Math.round(S.mixture*100),throttle_percent:Math.round(S.thrT*100),ignition_selector:ignition.selector,start_blockers:[...ignition.start_blockers],engine_running:engine.running,rpm:Math.round(S.rpm)};}
   if(module.scenario==="pitot_icing"){const pitot=pitotSystemState();return{airspeed_knots:pitot.actual_indicated_knots,sensed_knots:pitot.sensed_knots,pitot_ice_percent:pitot.ice_percent,pitot_heat_selected:pitot.heat_selected};}
   if(module.scenario==="alternator_bus"){const electrical=electricalState();return{battery_master_on:electrical.masterOn,alternator_switch_on:electrical.alternatorOn,alternator_fault:electrical.alternatorFault,electrical_source:electrical.source,volts:+electrical.volts.toFixed(1),battery_percent:Math.round(electrical.battery*100),engine_running:engineMixtureState().running,rpm:Math.round(S.rpm)};}
   return{};
 }
 function coachActiveSystemsLab(){
   const module=SYSTEMS_LAB_MAP[ACTIVE_SYSTEMS_LAB.id];if(!module||ACTIVE_SYSTEMS_LAB.completed)return false;
+  if(module.scenario==="cold_start"){const state=systemsLabObserved(module),blockers=state.start_blockers.length?state.start_blockers.join(", "):"none";return relayAviatorInstruction("systems-lab-"+module.id,"Cold-start lab active. Engine stopped; starter blockers "+blockers+". Read them, then clear BAT, mixture, throttle, and START using the physical cockpit controls",2);}
   if(module.scenario==="alternator_bus"){const electrical=electricalState();return relayAviatorInstruction("systems-lab-"+module.id,"Systems lab active. Bus source "+electrical.source+" at "+electrical.volts.toFixed(1)+" volts. Confirm the source, then operate the physical ALT rocker",2);}
   const pitot=pitotSystemState();return relayAviatorInstruction("systems-lab-"+module.id,"Systems lab active. IAS "+Math.round(pitot.sensed_knots)+" knots versus known "+Math.round(pitot.actual_indicated_knots)+". Identify the fault, then use the physical PITOT heat rocker",2);
 }
