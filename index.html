@@ -3470,7 +3470,7 @@ function alternatorScenarioPresentation(){
   if(stage==="act")return{step:2,focus:"alternator",title:"Restore the charge source",live:"BUS "+volts,band:"PHYSICAL ALT ROCKER REQUIRED",copy:"Use the illuminated physical ALT rocker. The lesson can observe the switch and bus response, but it cannot operate the aircraft for you.",next:"USE PHYSICAL SWITCH",disabled:true};
   if(stage==="charging")return{step:3,focus:"alternator",title:"Verify the bus",live:"ALT · "+volts,band:"SOURCE ALT · NORMAL 14.2 V",copy:"The bus source changed from battery to alternator power. Hold the configuration while live voltage confirms a stable charge.",next:"VERIFYING",disabled:true};
   if(stage==="fault")return{step:3,focus:"alternator",title:"Hardware fault confirmed",live:"ALT FAIL",band:"BATTERY ONLY · LANDING PLAN",copy:"The alternator itself has failed. Cycling the rocker is not a repair; conserve battery, reduce electrical load, and plan a landing.",next:"END DRILL",disabled:false};
-  if(stage==="complete")return{step:4,focus:"alternator",title:"Charging restored",live:"ALT · "+volts,band:"SOURCE ALT · BUS VERIFIED",copy:"Recovery is verified from live source and voltage telemetry. The alternator is carrying the bus again; this completes the drill, not a maintenance sign-off.",next:"DONE",disabled:false};
+  if(stage==="complete")return{step:4,focus:"alternator",title:"Charging restored",live:"ALT · "+volts,band:"SOURCE ALT · BUS VERIFIED",copy:"Recovery is verified from live source and voltage telemetry. The alternator is carrying the bus again; this completes the drill, not a maintenance sign-off.",next:ACTIVE_SYSTEMS_LAB.id&&ACTIVE_SYSTEMS_LAB.completed?"RETURN TO ATLAS":"DONE",disabled:false};
   return{step:1,focus:"alternator",title:"Recognize battery power",live:"BATT · "+volts,band:"ALT OFF · BATTERY DISCHARGING",copy:"The engine is running, but the bus is on the battery. Confirm the source and voltage before touching the alternator control.",next:"LOCATE ALT",disabled:false};
 }
 function coldStartNextStage(){if(!batteryMasterOn())return"battery";if(S.mixture<.65)return"mixture";if(S.thrT>.25)return"throttle";return"start";}
@@ -3512,7 +3512,7 @@ function syncCockpitTutorScenario(){
     const electrical=electricalState();if(electrical.alternatorFault&&before!=="complete")COCKPIT_TUTOR.scenarioStage="fault";else if((before==="detect"||before==="act")&&electrical.source==="ALT"&&electrical.volts>=13.5)COCKPIT_TUTOR.scenarioStage="charging";else if(before==="charging"&&electrical.source==="ALT"&&electrical.volts>=13.5)COCKPIT_TUTOR.scenarioStage="complete";
     if(before!==COCKPIT_TUTOR.scenarioStage&&COCKPIT_TUTOR.scenarioStage==="charging")blackBoxRecord("cockpit_scenario",{scenario:"alternator_bus",action:"alternator_selected",source:COCKPIT_TUTOR.source,alternator_switch_on:electrical.alternatorOn,electrical_source:electrical.source,volts:+electrical.volts.toFixed(1),battery_percent:Math.round(electrical.battery*100)},"training");
     if(before!==COCKPIT_TUTOR.scenarioStage&&COCKPIT_TUTOR.scenarioStage==="fault")blackBoxRecord("cockpit_scenario",{scenario:"alternator_bus",action:"hardware_fault",source:COCKPIT_TUTOR.source,electrical_source:electrical.source,volts:+electrical.volts.toFixed(1),battery_percent:Math.round(electrical.battery*100)},"warning");
-    if(COCKPIT_TUTOR.scenarioStage==="complete"&&!COCKPIT_TUTOR.scenarioCompleted){COCKPIT_TUTOR.scenarioCompleted=true;const elapsed=Math.max(0,S.simTime-COCKPIT_TUTOR.scenarioStartedAt);blackBoxRecord("cockpit_scenario",{scenario:"alternator_bus",action:"complete",source:COCKPIT_TUTOR.source,recovery_s:+elapsed.toFixed(2),alternator_switch_on:electrical.alternatorOn,electrical_source:electrical.source,volts:+electrical.volts.toFixed(1),battery_percent:Math.round(electrical.battery*100)},"outcome");if(AVIATOR.status==="LIVE")relayAviatorInstruction("alternator-scenario-complete","Alternator-bus recovery verified from live source and voltage telemetry. Give one short debrief line.",2);}
+    if(COCKPIT_TUTOR.scenarioStage==="complete"&&!COCKPIT_TUTOR.scenarioCompleted){COCKPIT_TUTOR.scenarioCompleted=true;const elapsed=Math.max(0,S.simTime-COCKPIT_TUTOR.scenarioStartedAt),observed={alternator_switch_on:electrical.alternatorOn,alternator_fault:electrical.alternatorFault,electrical_source:electrical.source,volts:+electrical.volts.toFixed(1),battery_percent:Math.round(electrical.battery*100)};blackBoxRecord("cockpit_scenario",{scenario:"alternator_bus",action:"complete",source:COCKPIT_TUTOR.source,recovery_s:+elapsed.toFixed(2),...observed},"outcome");if(ACTIVE_SYSTEMS_LAB.id)completeSystemsLab(ACTIVE_SYSTEMS_LAB.id,elapsed,observed);if(AVIATOR.status==="LIVE")relayAviatorInstruction("alternator-scenario-complete","Alternator-bus recovery verified from live source and voltage telemetry. Give one short debrief line.",2);}
   }else if(COCKPIT_TUTOR.scenario==="fuel_starvation"){
     const fuel=fuelSystemState(),engine=engineMixtureState(),usable=fuel.selector!=="off"&&fuel.selected_l>FUEL_SYSTEM.reserveL*.08;
     if(before==="select"&&usable)COCKPIT_TUTOR.scenarioStage="pump";else if(before==="pump"&&fuel.boost_pump_effective)COCKPIT_TUTOR.scenarioStage="pressurizing";else if(before==="pressurizing"&&fuel.engine_feed&&fuel.pressure_psi>=FUEL_SYSTEM.boostPressurePsi-.3&&engine.running&&S.rpm>=400)COCKPIT_TUTOR.scenarioStage="complete";
@@ -4518,6 +4518,12 @@ const SYSTEMS_LAB_MODULES = Object.freeze([
     title:"Pitot-Icing Recovery", difficulty:"ADVANCED", tier:3, system:"AIR DATA", completionXp:160,
     briefing:"Recover trustworthy airspeed in visible moisture using the physical PITOT heat rocker.",
     objective:"Identify unreliable IAS, select PITOT heat, hold known pitch and power, then verify the indication."
+  }),
+  Object.freeze({
+    id:"alternator-bus-recovery", scenario:"alternator_bus", discipline:"systems", location_id:"frontierField", level_id:"frontier",
+    title:"Alternator-Bus Recovery", difficulty:"INTERMEDIATE", tier:2, system:"ELECTRICAL", completionXp:170,
+    briefing:"Restore the charging bus with the physical ALT rocker, then verify source and voltage.",
+    objective:"Confirm battery-only power, select ALT, and verify a stable 14.2-volt charging source."
   })
 ]);
 const SYSTEMS_LAB_MAP = Object.freeze(Object.fromEntries(SYSTEMS_LAB_MODULES.map(module=>[module.id,module])));
@@ -4535,25 +4541,37 @@ function systemsLabTelemetry(){
 }
 function completeSystemsLab(id,recoverySeconds,observed={}){
   const module=SYSTEMS_LAB_MAP[id];if(!module||ACTIVE_SYSTEMS_LAB.id!==id||ACTIVE_SYSTEMS_LAB.outcomeRecorded)return false;
-  const progress=loadSystemsLabProgress(),previous=systemsLabProgress(id),recovery=+Math.max(0,recoverySeconds).toFixed(2),best=previous.best_recovery_s===null?recovery:Math.min(previous.best_recovery_s,recovery);
+  const progress=loadSystemsLabProgress(),previous=systemsLabProgress(id),recovery=+Math.max(0,recoverySeconds).toFixed(2),best=previous.best_recovery_s===null?recovery:Math.min(previous.best_recovery_s,recovery),firstMastery=previous.completions===0,profile=loadPilotProfile(),rankBefore=pilotRankForXp(profile.xp);if(firstMastery){profile.xp+=module.completionXp;profile.lastScene=module.level_id;try{localStorage.setItem(PILOT_PROFILE_KEY,JSON.stringify(profile));}catch(error){}}
+  const rankAfter=pilotRankForXp(profile.xp),career={xp_awarded:firstMastery?module.completionXp:0,total_xp:profile.xp,rank_before:rankBefore.name,rank_after:rankAfter.name,rank_up:rankAfter.index>rankBefore.index};
   progress.modules[id]={attempts:Math.max(1,previous.attempts),completions:previous.completions+1,best_recovery_s:best,last_recovery_s:recovery,last_completed_at:Date.now()};saveSystemsLabProgress(progress);
   ACTIVE_SYSTEMS_LAB.completed=true;ACTIVE_SYSTEMS_LAB.recoverySeconds=recovery;ACTIVE_SYSTEMS_LAB.outcomeRecorded=true;
-  blackBoxRecord("systems_lab_outcome",{module_id:id,title:module.title,scenario:module.scenario,location_id:module.location_id,recovery_s:recovery,best_recovery_s:best,mastered:true,observed},"outcome");
+  blackBoxRecord("systems_lab_outcome",{module_id:id,title:module.title,scenario:module.scenario,location_id:module.location_id,recovery_s:recovery,best_recovery_s:best,mastered:true,...career,observed},"outcome");updateRankHud();
   return true;
+}
+function stageSystemsLab(module){
+  if(module.scenario==="pitot_icing"){S.pitotHeatOn=false;S.pitotIce=.42;updateElectrical(0);return"IAS disagrees with known pitch and power. Diagnose first; then use the physical PITOT heat rocker.";}
+  if(module.scenario==="alternator_bus"){S.fail.alternator=false;Object.assign(S.electrical,{masterOn:true,alternatorOn:false,battery:1,load:0,low:false,dead:false});updateElectrical(0);return"The engine is running but the bus source is BATT. Confirm 12.8 volts, then use the physical ALT rocker.";}
+  return"Read the measured system state before operating the physical control.";
+}
+function systemsLabObserved(module){
+  if(module.scenario==="pitot_icing"){const pitot=pitotSystemState();return{airspeed_knots:pitot.actual_indicated_knots,sensed_knots:pitot.sensed_knots,pitot_ice_percent:pitot.ice_percent,pitot_heat_selected:pitot.heat_selected};}
+  if(module.scenario==="alternator_bus"){const electrical=electricalState();return{battery_master_on:electrical.masterOn,alternator_switch_on:electrical.alternatorOn,alternator_fault:electrical.alternatorFault,electrical_source:electrical.source,volts:+electrical.volts.toFixed(1),battery_percent:Math.round(electrical.battery*100),engine_running:engineMixtureState().running,rpm:Math.round(S.rpm)};}
+  return{};
 }
 function coachActiveSystemsLab(){
   const module=SYSTEMS_LAB_MAP[ACTIVE_SYSTEMS_LAB.id];if(!module||ACTIVE_SYSTEMS_LAB.completed)return false;
+  if(module.scenario==="alternator_bus"){const electrical=electricalState();return relayAviatorInstruction("systems-lab-"+module.id,"Systems lab active. Bus source "+electrical.source+" at "+electrical.volts.toFixed(1)+" volts. Confirm the source, then operate the physical ALT rocker",2);}
   const pitot=pitotSystemState();return relayAviatorInstruction("systems-lab-"+module.id,"Systems lab active. IAS "+Math.round(pitot.sensed_knots)+" knots versus known "+Math.round(pitot.actual_indicated_knots)+". Identify the fault, then use the physical PITOT heat rocker",2);
 }
 function launchSystemsLab(id="pitot-icing-recovery",source="atlas"){
   const module=SYSTEMS_LAB_MAP[id],location=module&&WORLD_LOCATIONS[module.location_id];if(!module||!location)return{ok:false,error:"Unknown systems lab"};
   hideMissionBoard(true);setLevel(module.level_id,false);WORLD_STATE.fastTravelId=location.id;WORLD_STATE.currentId=location.id;WORLD_STATE.lastTravelAt=S.simTime;applyWorldSpawn(location);S.ias=S.vel.length();
-  S.pitotHeatOn=false;S.pitotIce=.42;updateElectrical(0);camMode=1;orbit.az=0;orbit.el=.2;syncCameraModeUi();COCKPIT_DOCK.lastPhase=S.phase;COCKPIT_DOCK.manualExpanded=false;COCKPIT_DOCK.autoCollapsed=false;COCKPIT_DOCK.physicalReadyCollapsed=cockpitPhysicalControlsReady();setCockpitDockExpanded(!COCKPIT_DOCK.physicalReadyCollapsed);updateCamera(.016);syncGraphics(.016);updateCockpitDock();
+  const textFallback=stageSystemsLab(module);camMode=1;orbit.az=0;orbit.el=.2;syncCameraModeUi();COCKPIT_DOCK.lastPhase=S.phase;COCKPIT_DOCK.manualExpanded=false;COCKPIT_DOCK.autoCollapsed=false;COCKPIT_DOCK.physicalReadyCollapsed=cockpitPhysicalControlsReady();setCockpitDockExpanded(!COCKPIT_DOCK.physicalReadyCollapsed);updateCamera(.016);syncGraphics(.016);updateCockpitDock();
   Object.assign(ACTIVE_SYSTEMS_LAB,{id:module.id,source,startedAt:S.simTime,completed:false,recoverySeconds:0,outcomeRecorded:false});
   const progress=loadSystemsLabProgress(),previous=systemsLabProgress(module.id);progress.modules[module.id]={...progress.modules[module.id],attempts:previous.attempts+1,completions:previous.completions,best_recovery_s:previous.best_recovery_s,last_recovery_s:previous.last_recovery_s,last_completed_at:previous.last_completed_at};saveSystemsLabProgress(progress);
   const started=startCockpitScenario(module.scenario,"systems_lab");if(!started.ok){ACTIVE_SYSTEMS_LAB.id="";return started;}
-  cockpitTutorTextFallback("IAS disagrees with known pitch and power. Diagnose first; then use the physical PITOT heat rocker.");startAviatorFromFlightGesture();coachActiveSystemsLab();
-  const pitot=pitotSystemState();blackBoxRecord("systems_lab_handoff",{module_id:module.id,title:module.title,scenario:module.scenario,location_id:module.location_id,weather:activeLevel.regime,camera:CAM_NAMES[camMode],airspeed_knots:pitot.actual_indicated_knots,sensed_knots:pitot.sensed_knots,pitot_ice_percent:pitot.ice_percent,pitot_heat_selected:pitot.heat_selected,physical_control_required:true,gpt_realtime:true},"training");
+  cockpitTutorTextFallback(textFallback);startAviatorFromFlightGesture();coachActiveSystemsLab();
+  blackBoxRecord("systems_lab_handoff",{module_id:module.id,title:module.title,scenario:module.scenario,location_id:module.location_id,weather:activeLevel.regime,camera:CAM_NAMES[camMode],...systemsLabObserved(module),physical_control_required:true,gpt_realtime:true},"training");
   return{ok:true,module:systemsLabTelemetry(),cockpit:cockpitTutorTelemetry()};
 }
 function abandonSystemsLab(reason="close"){

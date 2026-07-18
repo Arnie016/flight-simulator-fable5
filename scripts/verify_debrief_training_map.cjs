@@ -85,7 +85,7 @@ async function main() {
     simpleActions:["RETRY FLIGHT","REPLAY","TRAINING MAP","FREE FLIGHT"].every(label=>reportCard.actions.includes(label)),
     offlineIsTextOnly:coaching.offline.includes("83/100") && coaching.offline.includes("Connect GPT Realtime") && coaching.offlineMeta.includes("No synthetic fallback voice"),
     groundedRealtime:eventText.includes('"score":83') && eventText.includes('"touchdown_sink_mps":1.3') && coaching.strength.startsWith("Stable flare") && coaching.correction.startsWith("Hold the centerline") && coaching.drill.startsWith("One centerline-only"),
-    mapIsLevelSelector:academy.pins===10 && academy.lessons===2 && academy.selectedLessons===1 && !academy.launchDisabled && academy.cardWall==="none" && academy.heading==="Choose a training ground",
+    mapIsLevelSelector:academy.pins===10 && academy.lessons===2 && academy.selectedLessons===1 && !academy.launchDisabled && academy.cardWall==="none" && academy.heading==="Island Flight Atlas",
     freeFlightHonest:freeFlight.selected==="silverLake" && freeFlight.lessons===0 && freeFlight.launchDisabled && freeFlight.copy.includes("FREE FLIGHT LANDMARK"),
     lessonPersists:alpine.selected==="alpineRidge" && alpine.lesson==="Ridge Mail" && alpine.persisted==="ridge-mail",
     responsive:mobileMap.overflow<=0 && mobileMap.map.width<=370 && mobileDebrief.overflow<=0 && mobileDebrief.sheet.left>=0 && mobileDebrief.sheet.right<=390 && mobileDebrief.metrics===3,
