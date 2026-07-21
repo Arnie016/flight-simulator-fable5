@@ -1,5 +1,29 @@
 # Fable Flight — browser flight trainer
 
+## Hackathon lane (Build Week) review branch
+
+This project is currently tracked and submitted from the dedicated review branch:
+
+- **Review branch:** `bw-safe-hackathon-review-2026-07`
+- **GitHub branch URL:** [https://github.com/Arnie016/flight-simulator-fable5/tree/bw-safe-hackathon-review-2026-07](https://github.com/Arnie016/flight-simulator-fable5/tree/bw-safe-hackathon-review-2026-07)
+- **Thread session /feedback anchor:** `019f4665-cd0c-70c2-98de-6ae26ee68969`
+- **Status:** This lane was prepared as a hackathon-optimized review branch with Codex-assisted iterations and submission continuity in mind.
+
+### Why this branch is important
+
+The project’s Build Week proof needs a clear majority of work to be in a coherent submission window. This branch captures the post-July 13 cadence and is the submission path to reference for judges.
+
+### What changed during the hackathon with Codex (high-level)
+
+- Expanded **physical-first cockpit implementation** with Blender-authored GLB systems (instruments, throttle/mixture, systems console, flap/trim/brake controls) and deterministic state hooks.
+- Added **GPT Realtime coaching** through a same-origin bridge flow with explicit user-microphone gesture and no browser key exposure.
+- Introduced practical, spoken **voice-driven drills** (cold start, pitot heat, alternator recovery) that require real physical control interaction.
+- Reworked **progressive preflight and readiness flows** for clearer checklist staging, more accurate failure guards, and stronger training hold behavior.
+- Upgraded **Flight Board + Training Island** context (route planning, mission telemetry, mission briefings, and lesson persistence).
+- Added and named repeatable **verification scripts** for control-plane, cockpit, safety, and coaching scenarios.
+
+The result is a stronger, submission-focused branch with clearer coaching, richer state visibility, and a cleaner Hack Week narrative than earlier snapshots.
+
 A desktop-browser flight simulator with a voice instructor, scored training circuits, real(ish) trainer physics, cinematic color-managed lighting, animated procedural terrain, night flying, and practice failures. No runtime build step: `index.html` plus baked static asset JS and Three.js from a CDN. An optional Node bridge adds secure GPT Realtime voice sessions without exposing an API key to the browser.
 
 The ambitious next milestone is defined in [ISLAND_ALPHA_GOAL.md](ISLAND_ALPHA_GOAL.md): ten fast-travel locations, twelve story missions, richer weather and energy training, a populated island, and GPT Realtime Black Box coaching under explicit performance and verification limits.
