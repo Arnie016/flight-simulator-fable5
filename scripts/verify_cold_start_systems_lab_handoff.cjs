@@ -27,7 +27,7 @@ async function main(){
   await page.locator('[data-discipline="systems"]').click();
   await page.waitForFunction(()=>SIM.boardState().systemsLabId==="academy-cold-start");
   const atlasBefore=await page.evaluate(()=>{const row=document.querySelector('[data-system-lab="academy-cold-start"]'),rect=row.getBoundingClientRect(),card=document.querySelector(".destination-card").getBoundingClientRect();return{board:SIM.boardState(),row:{display:getComputedStyle(row).display,text:row.textContent.trim(),pressed:row.getAttribute("aria-pressed"),left:rect.left,right:rect.right,top:rect.top,bottom:rect.bottom},card:{left:card.left,right:card.right,top:card.top,bottom:card.bottom},preview:destinationLessonPreview.textContent,launch:destinationLaunch.textContent,tab:document.querySelector('[data-discipline="systems"] small').textContent,pilot:SIM.pilotProfile()};});
-  await page.screenshot({path:path.join(artifacts,"cold-start-systems-lab-atlas-desktop.png")});
+  await page.screenshot({path:path.join(artifacts,"cold-start-systems-lab-atlas-desktop.png"),timeout:60000});
 
   await page.locator("#destinationLaunch").click();
   await page.waitForFunction(()=>SIM.cockpitTutor().scenario?.id==="cold_start",null,{timeout:15000});
@@ -46,20 +46,20 @@ async function main(){
 
   const throttlePoint=await point("throttle");await page.mouse.move(throttlePoint.x,throttlePoint.y);await page.mouse.down();await page.mouse.move(throttlePoint.x,throttlePoint.y+150,{steps:10});await page.mouse.up();await page.waitForTimeout(160);
   const startStage=await page.evaluate(()=>({tutor:SIM.cockpitTutor(),lock:COCKPIT_SYSTEMS_FOCUS.locked,mixture:Math.round(S.mixture*100),throttle:Math.round(S.thrT*100),next:{text:cockpitTutorNext.textContent,disabled:cockpitTutorNext.disabled},copy:cockpitTutorCopy.textContent}));
-  await page.screenshot({path:path.join(artifacts,"cold-start-systems-lab-action-desktop.png")});
+  await page.screenshot({path:path.join(artifacts,"cold-start-systems-lab-action-desktop.png"),timeout:60000});
 
   const ignitionPoint=await point("ignition");await page.mouse.move(ignitionPoint.x,ignitionPoint.y);await page.mouse.down();await page.mouse.move(ignitionPoint.x+185,ignitionPoint.y,{steps:12});await page.mouse.up();await page.waitForTimeout(620);
   const complete=await page.evaluate(()=>{const module=SIM.systemsLabs().find(item=>item.id==="academy-cold-start");return{tutor:SIM.cockpitTutor(),lab:SIM.systemsLabState(),ignition:SIM.ignition(),engine:SIM.engineManagement(),progress:module.progress,pilot:SIM.pilotProfile(),next:{text:cockpitTutorNext.textContent,disabled:cockpitTutorNext.disabled},events:BLACK_BOX.events.filter(event=>["electrical_switch","cockpit_control","ignition_switch","systems_lab_outcome"].includes(event.type)).map(event=>({type:event.type,data:event.data})),facts:SIM.blackBox().facts.map(fact=>fact.text)};});
-  await page.screenshot({path:path.join(artifacts,"cold-start-systems-lab-complete-desktop.png")});
+  await page.screenshot({path:path.join(artifacts,"cold-start-systems-lab-complete-desktop.png"),timeout:60000});
 
   await page.click("#cockpitTutorNext");await page.waitForTimeout(240);
   const returned=await page.evaluate(()=>{const row=document.querySelector('[data-system-lab="academy-cold-start"]'),module=SIM.systemsLabs().find(item=>item.id==="academy-cold-start");return{board:SIM.boardState(),lab:SIM.systemsLabState(),row:{text:row?.textContent.trim()||"",pressed:row?.getAttribute("aria-pressed")||"",mastered:row?.classList.contains("mastered")||false},preview:destinationLessonPreview.textContent,progress:module.progress,pilot:SIM.pilotProfile(),tab:document.querySelector('[data-discipline="systems"] small').textContent,events:BLACK_BOX.events.filter(event=>["systems_lab_handoff","systems_lab_outcome","systems_lab_return"].includes(event.type)).map(event=>({type:event.type,data:event.data}))};});
-  await page.screenshot({path:path.join(artifacts,"cold-start-systems-lab-mastered-atlas-desktop.png")});
+  await page.screenshot({path:path.join(artifacts,"cold-start-systems-lab-mastered-atlas-desktop.png"),timeout:60000});
 
   const outcome=complete.events.find(event=>event.type==="systems_lab_outcome")?.data;
   const checks={
     academyExposesFoundationModule:atlasBefore.board.discipline==="systems"&&atlasBefore.board.selectedId==="academy"&&atlasBefore.board.systemsLabId==="academy-cold-start"&&atlasBefore.row.display==="grid"&&atlasBefore.row.text.includes("Cold-Start Sequence")&&atlasBefore.preview.includes("BAT, mixture, throttle")&&atlasBefore.launch==="START SYSTEMS LAB"&&atlasBefore.row.left>=atlasBefore.card.left&&atlasBefore.row.right<=atlasBefore.card.right,
-    handoffStagesMeasuredColdCockpit:!handoff.board.visible&&handoff.scene==="circuit"&&handoff.world==="academy"&&handoff.camera==="COCKPIT"&&handoff.lab.active&&handoff.lab.id==="academy-cold-start"&&handoff.tutor.scenario.stage==="diagnose"&&!handoff.engine.running&&!handoff.electrical.masterOn&&handoff.tutor.scenario.observed.mixture_percent===5&&handoff.tutor.scenario.observed.throttle_percent===60&&handoff.ignition.selector==="off",
+    handoffStagesMeasuredColdCockpit:!handoff.board.visible&&handoff.scene==="circuit"&&handoff.world==="academy"&&handoff.camera==="COCKPIT"&&handoff.lab.active&&handoff.lab.id==="academy-cold-start"&&handoff.tutor.scenario.stage==="diagnose"&&handoff.tutor.scenario.observed.phase==="parked"&&!handoff.engine.running&&!handoff.electrical.masterOn&&handoff.tutor.scenario.observed.mixture_percent===5&&handoff.tutor.scenario.observed.throttle_percent===60&&handoff.ignition.selector==="off",
     realtimeReceivesExactStarterBlockers:handoff.realtime.training_lab.id==="academy-cold-start"&&handoff.realtime.screen_context.systems_lab==="academy-cold-start"&&handoff.realtime.cockpit.learning.scenario.observed.start_blockers.includes("BATTERY")&&handoff.realtime.cockpit.learning.scenario.observed.start_blockers.includes("MIXTURE")&&handoff.realtime.cockpit.learning.scenario.observed.start_blockers.includes("THROTTLE")&&handoff.events.some(event=>event.physical_control_required&&!event.engine_running&&event.ignition_selector==="off"),
     batteryRockerClearsFirstBlocker:batteryStage.tutor.scenario.stage==="battery"&&batteryStage.lock==="battery"&&batteryStage.next.disabled&&mixtureStage.electrical.masterOn&&mixtureStage.tutor.scenario.stage==="mixture"&&mixtureStage.lock==="mixture",
     engineLeversClearMeasuredLimits:throttleStage.mixture>=65&&throttleStage.tutor.scenario.stage==="throttle"&&throttleStage.lock==="throttle"&&startStage.throttle<=25&&startStage.mixture>=65&&startStage.tutor.scenario.stage==="start"&&startStage.lock==="ignition"&&startStage.next.disabled&&startStage.copy.includes("cannot crank"),
