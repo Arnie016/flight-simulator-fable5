@@ -2,14 +2,14 @@
 
 A desktop-browser flight trainer for mission-based flight learning with measurable outcomes, voice coaching, and systems-first training workflows.
 
-## 1) Human-first summary for judges
+## 1) Quick reviewer summary
 
-| What judges care about | Where this project delivers |
+| What to verify quickly | Where it is shown |
 |---|---|
-| Is it real and complete? | Full playable loop from briefing → flying → scoring → debrief → downloadable/shareable clips |
-| Is the experience understandable? | Guided missions, visible instructions, progressive checklist, and explicit controls |
-| Does it solve a real problem? | Reduces setup cost for flight basics and systems coaching with a hands-on simulator environment |
-| Can judges reproduce it? | Public run links plus local run instructions are included |
+| Is it real and complete? | A playable loop that covers onboarding, mission execution, scoring, and debriefing |
+| Is it easy to pick up? | Guided missions, visible instruction cues, progressive checklist, and clear controls |
+| Is the outcome practical? | Builds measurable flight-systems understanding in a low-risk environment |
+| Can it be run instantly? | Public run links and local run instructions are included |
 
 ## 2) Build Week scoring matrix (explicit mapping)
 
