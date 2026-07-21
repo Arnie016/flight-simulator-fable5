@@ -1,27 +1,57 @@
 # Fable Flight — browser flight trainer
 
-A desktop-browser flight simulator with a voice instructor, scored training circuits, real(ish) trainer physics, cinematic color-managed lighting, animated procedural terrain, night flying, and practice failures. No runtime build step: `index.html` plus baked static asset JS and Three.js from a CDN. An optional Node bridge adds secure GPT Realtime voice sessions without exposing an API key to the browser.
+A desktop-browser flight trainer for mission-based flight learning with measurable outcomes, voice coaching, and systems-first training workflows.
 
-The ambitious next milestone is defined in [ISLAND_ALPHA_GOAL.md](ISLAND_ALPHA_GOAL.md): ten fast-travel locations, twelve story missions, richer weather and energy training, a populated island, and GPT Realtime Black Box coaching under explicit performance and verification limits.
+## 1) Human-first summary for judges
 
-## Run this project
+| What judges care about | Where this project delivers |
+|---|---|
+| Is it real and complete? | Full playable loop from briefing → flying → scoring → debrief → downloadable/shareable clips |
+| Is the experience understandable? | Guided missions, visible instructions, progressive checklist, and explicit controls |
+| Does it solve a real problem? | Reduces setup cost for flight basics and systems coaching with a hands-on simulator environment |
+| Can judges reproduce it? | Public run links plus local run instructions are included |
 
-| Path | What to do | Result |
+## 2) Build Week scoring matrix (explicit mapping)
+
+| Criterion | Evidence |
+|---|---|
+| Technological Implementation | Deterministic simulation state, measured telemetry, event-driven Black Box facts, and `gpt-realtime-2.1` tool-connected coaching with same-origin bridge |
+| Design | Full user flow with training missions, map/flight-state clarity, controller support, emergency drills, and replay/debrief |
+| Potential Impact | A reusable teaching model for flight training, simulation coaching, and instructional systems with constrained, low-cost delivery |
+| Quality of Idea | Integrates AI coaching into a complex simulator loop (control + environment + measurable outcomes), not a superficial proof of concept |
+
+## 3) Built with Codex + GPT-5.6
+
+### How it was made
+- Built in iterative Codex sessions using a strict: **specify → implement → validate → repair** loop.
+- High-impact work was encoded in contract/assertion and verification artifacts to support reproducibility.
+- GPT-5.6 was used for the in-product instructor/review coaching path and for explanation layers used in the final submission deck.
+
+### Time allocation (post-2026-07-13 focus)
+- 2026-07-18 17:35–19:05: core Build Week feature work and stabilization in one continuous stretch.
+- 2026-07-22: final docs/packaging and judge-readiness cleanup.
+- For full exact trace: `git log --since='2026-07-13'`.
+
+## 4) Run and test (what judges should do first)
+
+| Path | Command / action | Result |
 |---|---|---|
-| Live judge/public run | Open [https://flight-sim-sandy.vercel.app](https://flight-sim-sandy.vercel.app) | Full playable flight trainer with latest build |
-| GitHub Pages | Open [https://arnie016.github.io/flight-simulator-fable5/](https://arnie016.github.io/flight-simulator-fable5/) | Public fallback mirror |
-| Local static run | Open `index.html` in a modern browser | Runs the flight trainer (no build step) |
+| Vercel judge/public demo | Open [https://flight-sim-sandy.vercel.app](https://flight-sim-sandy.vercel.app) | Public playable build |
+| GitHub Pages fallback | Open [https://arnie016.github.io/flight-simulator-fable5/](https://arnie016.github.io/flight-simulator-fable5/) | Public fallback mirror |
+| Local static launch | Open `index.html` | Immediate single-file run |
+| Local Realtime coach | Run `cd /Users/arnav/Desktop/flight-sim && OPENAI_API_KEY="YOUR_KEY_HERE" node server/fable-flight-server.mjs` | Starts same-origin bridge for voice coaching |
 
-## GPT Realtime setup
+Then open `http://127.0.0.1:8643`, click **BEGIN FLIGHT**, and allow microphone permission for voice mode.
 
-For full AI instructor, voice interaction, and tool-based coaching, run the local same-origin bridge with your own API key:
+## 5) Future work (beyond submission) for next judging cycle
 
-```bash
-cd /Users/arnav/Desktop/flight-sim
-OPENAI_API_KEY="YOUR_KEY_HERE" node server/fable-flight-server.mjs
-```
+- Mobile offline scoring snapshots and classroom mode.
+- Multi-user instructor and class analytics layers.
+- Mission bank expansion with adaptive difficulty.
+- Exportable debrief reports for coaching review.
 
-Then open `http://127.0.0.1:8643`, click **BEGIN FLIGHT**, and approve browser microphone permission when prompted.
+## Appendix A — Implementation and technical notes (for AI/technical review)
+
 
 ## How to fly
 Choose the training flight on the opening screen before pressing **BEGIN FLIGHT**. That selection applies its actual terrain/weather, runway surface, mission objectives, traffic, cargo, lighting, sound, and haptic profile, and is restored on the next reload. On the local bridge, the same gesture starts **GPT Realtime Aviator** and requests browser microphone permission; the compact **MIC LIVE** control pauses or resumes pilot input without disconnecting event coaching. There is no local or prerecorded instructor-voice fallback. Then press **E** to clear the scene-aware departure check, hold **W** for full throttle → pull **↓** at 55 kt → follow the text guidance, sparse route chevrons, and open corridor brackets → stabilize final at ~65 kt with flaps **F** → flare below 10 m → brake with **Space**. Use **Shift+F** to retract flaps one notch. Each scene ends with a visual flight report: a captured touchdown frame, one-to-three stars, three landing highlights, and an actual replay-derived centerline trace. Full objectives and Black Box facts remain in the collapsed Flight Log.
